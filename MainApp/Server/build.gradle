@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'MainApp'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+application{
+    mainClass='StartServer'
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
+    implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
+    implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
+}
+
+test {
+    useJUnitPlatform()
+}
