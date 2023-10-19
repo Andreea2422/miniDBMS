@@ -33,7 +33,7 @@ public class HelloController {
 
         Stage stage = (Stage) ((Node) actionEvent.getSource()).getScene().getWindow();
 
-        myDBMS = loadDBMSFromXML();
+//        myDBMS = loadDBMSFromXML();
         MainController mainController = fxmlLoader.getController();
         mainController.setDatabases(myDBMS);
 

@@ -188,13 +188,32 @@ public class MainController {
     }
 
     private void addNewTable(ActionEvent event) {
-        TreeItem<String> newTable = new TreeItem<>("New Table");
-        TreeItem<String> columns = new TreeItem<>("Columns");
-        TreeItem<String> keys = new TreeItem<>("Keys");
-        TreeItem<String> indexes = new TreeItem<>("Indexes");
-        newTable.getChildren().addAll(columns,keys,indexes);
+        // Load the FXML file and create a new stage
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainapp/events/createtb-view.fxml"));
+        Stage dialogStage = new Stage();
+        // Set the owner of the dialog (main stage)
+        dialogStage.initOwner(mainTreeView.getScene().getWindow());
+        try {
+            // Load the scene from the FXML file
+            Scene scene = new Scene(loader.load());
 
-        mainTreeView.getSelectionModel().getSelectedItem().getChildren().add(newTable);
+            // Set the scene and show the dialog
+            dialogStage.setScene(scene);
+
+            TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
+            String dbName = selectedItem.getParent().getValue();
+            crtDatabase = myDBMS.getDatabaseByName(dbName);
+
+            // Set the controller for the dialog
+            CreateTbController controller = loader.getController();
+            controller.setMainTreeView(mainTreeView);
+            controller.setDBandField(myDBMS, crtDatabase, resultTextArea);
+
+            dialogStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        crtDatabase = null;
     }
 
 

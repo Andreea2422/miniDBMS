@@ -14,18 +14,6 @@ import java.io.IOException;
 public class Utils {
     private static final String DBMS_XML_FILE = "D:\\UNI\\MASTER AN 1\\ISGBD\\MiniDBMS\\MainApp\\Server\\files\\MyCatalog.xml";
 
-    public static String readXmlFromFile(String fileName) throws IOException {
-        StringBuilder xmlData = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new FileReader(fileName)))
-        {
-            String line;
-            while ( (line = reader.readLine() ) != null) {
-                xmlData.append(line).append("\n");
-            }
-        }
-        return xmlData.toString();
-    }
-
     public static Databases loadDBMSFromXML() {
         File xmlFile = new File(DBMS_XML_FILE);
         if (xmlFile.exists()) {

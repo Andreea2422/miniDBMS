@@ -20,6 +20,7 @@ import static utils.Utils.saveDBMSToXML;
 public class CreateDbController {
     @FXML
     private TextField dbNameField;
+
     private TreeView<String> mainTreeView;
     private Databases myDBMS;
     private DataBase crtDatabase;
@@ -38,6 +39,10 @@ public class CreateDbController {
     public void addDatabase(ActionEvent actionEvent){
         // Get the new database name from the TextField
         String newDatabaseName = dbNameField.getText();
+        if (newDatabaseName.isEmpty()) {
+            resultTextArea.setText("Please input database name");
+            return;
+        }
 
         processCreateDbFromContext(newDatabaseName);
 

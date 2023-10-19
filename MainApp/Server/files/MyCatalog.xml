@@ -1,7 +1,42 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <databases>
     <database databaseName="Database1">
-        <tables/>
+        <tables>
+            <table tableName="tb1" fileName="tb1.bin">
+                <structure>
+                    <attribute columnName="id" type="Integer">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>id</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <foreignKeys/>
+                <IndexFiles/>
+            </table>
+            <table tableName="tb2" fileName="tb2.bin">
+                <structure>
+                    <attribute columnName="ID" type="Integer">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="c1" type="Double">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="c2" type="Integer">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>ID</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <foreignKeys/>
+                <IndexFiles/>
+            </table>
+        </tables>
     </database>
     <database databaseName="Database2">
         <tables>
@@ -22,8 +57,5 @@
                 <IndexFiles/>
             </table>
         </tables>
-    </database>
-    <database databaseName="NewDB">
-        <tables/>
     </database>
 </databases>

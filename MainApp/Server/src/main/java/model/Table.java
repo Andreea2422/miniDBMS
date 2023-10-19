@@ -37,6 +37,19 @@ public class Table implements Serializable {
         this.indexes = new ArrayList<>();
     }
 
+    public Table(String tableName, List<Column> columns, List<PrimaryKey> primaryKeys, List<ForeignKey> foreignKeys) {
+        this.tableName = tableName;
+        this.fileName =  tableName + ".bin" ;
+        this.columns = columns;
+        this.primaryKeys = primaryKeys;
+        this.foreignKeys = foreignKeys;
+        this.indexes = new ArrayList<>();
+    }
+
+    public void createIndex(Index newIndex) {
+        indexes.add(newIndex);
+    }
+
     public String getTableName() {
         return tableName;
     }
