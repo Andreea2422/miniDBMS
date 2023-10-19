@@ -128,11 +128,7 @@ public class CreateTbController implements Initializable {
         addNewColumnButton.setLayoutY(14.0);
         addNewColumnButton.setText("+");
 
-        // Set the positions of the elements within the AnchorPane
-        // You can adjust the layoutX and layoutY values as needed
         newColumnAnchorPane.getChildren().addAll(columnName, dataType, primaryKeyCheckbox, addNewColumnButton);
-
-        // Add the new AnchorPane with column details to the VBox
         columnDetailsVBox.getChildren().add(newColumnAnchorPane);
 
         // Set the ScrollPane to scroll if the content exceeds its height
@@ -180,7 +176,6 @@ public class CreateTbController implements Initializable {
                 ComboBox<String> dataType = (ComboBox<String>) columnDetailsAnchorPane.lookup("#dataType");
                 CheckBox primaryKeyCheckbox = (CheckBox) columnDetailsAnchorPane.lookup("#primaryKeyCheckbox");
 
-                // Retrieve values from the input fields
                 String columnNameValue = columnName.getText();
                 String dataTypeValue = dataType.getValue();
                 boolean isPrimaryKey = primaryKeyCheckbox.isSelected();
@@ -192,8 +187,6 @@ public class CreateTbController implements Initializable {
                     PrimaryKey newPrimaryKey = new PrimaryKey(columnNameValue);
                     primaryKeys.add(newPrimaryKey);
                 }
-
-
 
                 if (columnNameValue.isEmpty()) {
                     resultTextArea.setText("Invalid column name");
@@ -214,7 +207,5 @@ public class CreateTbController implements Initializable {
         // Close the dialog
         ((Stage) tbNameField.getScene().getWindow()).close();
     }
-
-
 
 }
