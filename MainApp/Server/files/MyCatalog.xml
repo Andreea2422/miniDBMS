@@ -2,10 +2,13 @@
 <databases>
     <database databaseName="Database1">
         <tables>
-            <table tableName="tb1" fileName="tb1.bin">
+            <table tableName="Testing1" fileName="Testing1.bin">
                 <structure>
-                    <attribute columnName="id" type="Integer">
+                    <attribute columnName="id" type="int">
                         <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="c1" type="float">
+                        <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
                 <primaryKey>
@@ -14,27 +17,13 @@
                     </pkAttribute>
                 </primaryKey>
                 <foreignKeys/>
-                <IndexFiles/>
-            </table>
-            <table tableName="tb2" fileName="tb2.bin">
-                <structure>
-                    <attribute columnName="ID" type="Integer">
-                        <isPrimaryKey>true</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="c1" type="Double">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="c2" type="Integer">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                </structure>
-                <primaryKey>
-                    <pkAttribute>
-                        <pkAttribute>ID</pkAttribute>
-                    </pkAttribute>
-                </primaryKey>
-                <foreignKeys/>
-                <IndexFiles/>
+                <IndexFiles>
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Testing1">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
             </table>
         </tables>
     </database>

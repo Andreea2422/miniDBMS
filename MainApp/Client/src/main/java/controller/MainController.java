@@ -9,10 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
-import model.Column;
-import model.DataBase;
-import model.Databases;
-import model.Table;
+import model.*;
 
 import java.io.*;
 import java.util.List;
@@ -61,22 +58,47 @@ public class MainController {
             List<Table> tablesList = db.getTables();
             for (Table tb : tablesList) {
                 TreeItem<String> tbItem = new TreeItem<>(tb.getTableName());
+                TreeItem<String> columns = new TreeItem<>("Columns");
+                TreeItem<String> keys = new TreeItem<>("Keys");
+                TreeItem<String> indexes = new TreeItem<>("Indexes");
 
                 List<Column> columnList = tb.getColumns();
                 for (Column cl : columnList) {
                     String key;
                     String value;
+                    String keys_value;
 
                     if (cl.isPrimaryKey())
                         {
                             key = "PK";
                             value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
+
+                            keys_value = "PK_" + tb.getTableName();
+                            TreeItem<String> keyItem = new TreeItem<>(keys_value);
+                            keys.getChildren().add(keyItem);
                         }
                     else value = cl.getColumnName() + " (" + cl.getType() + ")";
 
                     TreeItem<String> clItem = new TreeItem<>(value);
-                    tbItem.getChildren().add(clItem);
+                    columns.getChildren().add(clItem);
                 }
+
+                List<ForeignKey> fkList = tb.getForeignKeys();
+                for (ForeignKey fk : fkList) {
+                    String keys_value;
+
+                    keys_value = "FK_" + tb.getTableName() + "_" + fk.getRefTable();
+                    TreeItem<String> keyItem = new TreeItem<>(keys_value);
+                    keys.getChildren().add(keyItem);
+                }
+
+                List<Index> indexesList = tb.getIndexes();
+                for (Index ix : indexesList) {
+                    TreeItem<String> ixItem = new TreeItem<>(ix.getIndexName());
+                    indexes.getChildren().add(ixItem);
+                }
+
+                tbItem.getChildren().addAll(columns, keys, indexes);
                 tables.getChildren().add(tbItem);
             }
             dbItem.getChildren().add(tables);

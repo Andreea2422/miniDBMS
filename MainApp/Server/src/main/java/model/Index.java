@@ -1,13 +1,23 @@
 package model;
 
+import javax.xml.bind.annotation.*;
 import java.io.Serializable;
 import java.util.List;
 
+@XmlAccessorType(XmlAccessType.FIELD )
+@XmlRootElement(name = "IndexFiles")
+@XmlType(propOrder = { "indexName", "fileName", "tableName", "columns" })
 public class Index implements Serializable {
+    @XmlAttribute
     private String indexName;
-    private String tableName;
-    private List<String> columns;
+    @XmlAttribute
     private String fileName;
+    @XmlAttribute
+    private String tableName;
+    @XmlElement(name = "IAttribute")
+    @XmlElementWrapper(name = "IndexAttributes")
+    private List<String> columns;
+
 
     public Index() {}
 

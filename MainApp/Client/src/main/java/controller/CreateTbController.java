@@ -186,6 +186,11 @@ public class CreateTbController implements Initializable {
                 if (isPrimaryKey) {
                     PrimaryKey newPrimaryKey = new PrimaryKey(columnNameValue);
                     primaryKeys.add(newPrimaryKey);
+                    List<String> columnsName = new ArrayList<>();
+                    columnsName.add(columnNameValue);
+                    String pk_index_name = "PK_" + columnNameValue;
+                    Index pk_index = new Index(pk_index_name, tableName, columnsName);
+                    indexes.add(pk_index);
                 }
 
                 if (columnNameValue.isEmpty()) {

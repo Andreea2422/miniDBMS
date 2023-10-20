@@ -11,7 +11,6 @@ K
 MainApp/Server/build.gradle,9\a\9a04b371045c2f77f425f118b64e365a83074df7
 K
 MainApp/Client/build.gradle,8\4\84314ab4843a6876682f0d9219d08019349dc86b
-a
-1MainApp/Server/src/main/java/model/Databases.java,a\0\a00f76dbd9c9ad3466462c74e7dcb702f7694aee
-`
-0MainApp/Server/src/main/java/model/DataBase.java,b\b\bbfe86d86674336fbe277cb98f96646dd684e346
+:
+
+.gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
