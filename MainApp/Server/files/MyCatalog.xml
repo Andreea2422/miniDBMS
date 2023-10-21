@@ -23,6 +23,43 @@
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
+                    <IndexFile indexName="index_testingc1" fileName="index_testingc1.ind" tableName="Testing1">
+                        <IndexAttributes>
+                            <IAttribute>c1</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                    <IndexFile indexName="multiple_index" fileName="multiple_index.ind" tableName="Testing1">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                            <IAttribute>c1</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
+            </table>
+            <table tableName="Testing2" fileName="Testing2.bin">
+                <structure>
+                    <attribute columnName="id" type="int">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="c1" type="int">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="c2" type="date">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>id</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <foreignKeys/>
+                <IndexFiles>
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Testing2">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
                 </IndexFiles>
             </table>
         </tables>

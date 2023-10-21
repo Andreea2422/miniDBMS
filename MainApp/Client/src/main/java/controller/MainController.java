@@ -34,6 +34,8 @@ public class MainController {
     private MenuItem dropDatabase;
     private ContextMenu tbContextMenu;
     private MenuItem dropTable;
+    private ContextMenu indexContextMenu;
+    private MenuItem createIndex;
 
     private Databases myDBMS;
     private DataBase crtDatabase;
@@ -132,6 +134,12 @@ public class MainController {
         dropTable.setOnAction(this::dropTableFromContext);
         tbContextMenu.getItems().add(dropTable);
 
+        // Create a ContextMenu and MenuItem for creating an index
+        indexContextMenu = new ContextMenu();
+        createIndex = new MenuItem("New Index");
+        createIndex.setOnAction(this::addNewIndex);
+        indexContextMenu.getItems().add(createIndex);
+
 
         mainTreeView.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
             // Set up the context menu to display when the root item is right-clicked
@@ -140,7 +148,7 @@ public class MainController {
                 event.consume();
             }
 
-            // Set up the context menu to display when a "Tables" item is right-clicked
+            // Set up the context menu to display when the "Tables" item is right-clicked
             TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
             if (selectedItem.getValue().equals("Tables")) {
                 tablesContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
@@ -160,6 +168,12 @@ public class MainController {
                 for (Table tb : tableList) {
                     if (selectedItem.getValue().equals(tb.getTableName())) {
                         tbContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
+                        event.consume();
+                    }
+
+                    // Set up the context menu to display when the "Indexes" item is right-clicked
+                    if (selectedItem.getValue().equals("Indexes")) {
+                        indexContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
                         event.consume();
                     }
                 }
@@ -257,6 +271,34 @@ public class MainController {
         crtDatabase = null;
     }
 
+    private void addNewIndex(ActionEvent event) {
+        // Load the FXML file and create a new stage
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainapp/events/createindex-view.fxml"));
+        Stage dialogStage = new Stage();
+        // Set the owner of the dialog (main stage)
+        dialogStage.initOwner(mainTreeView.getScene().getWindow());
+        try {
+            // Load the scene from the FXML file
+            Scene scene = new Scene(loader.load());
+
+            // Set the scene and show the dialog
+            dialogStage.setScene(scene);
+
+            TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
+            String dbName = selectedItem.getParent().getParent().getParent().getValue();
+            String tbName = selectedItem.getParent().getValue();
+            crtDatabase = myDBMS.getDatabaseByName(dbName);
+
+            // Set the controller for the dialog
+            CreateIndexController controller = loader.getController();
+            controller.setAttr(mainTreeView, myDBMS, crtDatabase, tbName, resultTextArea);
+
+            dialogStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        crtDatabase = null;
+    }
 
 
     ///////////////////////////////////////////////////////////
