@@ -23,11 +23,6 @@
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
-                    <IndexFile indexName="index_testingc1" fileName="index_testingc1.ind" tableName="Testing1">
-                        <IndexAttributes>
-                            <IAttribute>c1</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
                     <IndexFile indexName="multiple_index" fileName="multiple_index.ind" tableName="Testing1">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>

@@ -23,8 +23,6 @@ public class CreateIndexController {
     @FXML
     private TextField indexNameField;
     @FXML
-    private TextField indexTypeField;
-    @FXML
     private TextField tbNameField;
     @FXML
     private VBox columnDetailsVBox;
@@ -32,8 +30,6 @@ public class CreateIndexController {
     private AnchorPane anchorColumnDetails;
     @FXML
     private ComboBox<String> columnsBox;
-    @FXML
-    private CheckBox uniqueCheckbox;
     @FXML
     private Button addColumnButton;
     @FXML
@@ -119,16 +115,11 @@ public class CreateIndexController {
         List<Table> tables = crtDatabase.getTables();
 
         String indexName = indexNameField.getText();
-//        String indexType = indexTypeField.getText();
 
         if (indexName.isEmpty()) {
             resultTextArea.setText("Please input index name");
             return;
         }
-//        else if (indexType.isEmpty()) {
-//            resultTextArea.setText("Please input index type");
-//            return;
-//        }
 
         // Access the column details
         for (Node node : columnDetailsVBox.getChildren()) {

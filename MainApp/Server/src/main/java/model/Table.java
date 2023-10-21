@@ -49,6 +49,7 @@ public class Table implements Serializable {
     public void createIndex(Index newIndex) {
         indexes.add(newIndex);
     }
+    public void dropIndex(Index index) { indexes.remove(index); }
 
     public String getTableName() {
         return tableName;

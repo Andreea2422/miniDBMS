@@ -36,6 +36,8 @@ public class MainController {
     private MenuItem dropTable;
     private ContextMenu indexContextMenu;
     private MenuItem createIndex;
+    private ContextMenu dropIndexContextMenu;
+    private MenuItem dropIndex;
 
     private Databases myDBMS;
     private DataBase crtDatabase;
@@ -71,14 +73,14 @@ public class MainController {
                     String keys_value;
 
                     if (cl.isPrimaryKey())
-                        {
-                            key = "PK";
-                            value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
+                    {
+                        key = "PK";
+                        value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
 
-                            keys_value = "PK_" + tb.getTableName();
-                            TreeItem<String> keyItem = new TreeItem<>(keys_value);
-                            keys.getChildren().add(keyItem);
-                        }
+                        keys_value = "PK_" + tb.getTableName();
+                        TreeItem<String> keyItem = new TreeItem<>(keys_value);
+                        keys.getChildren().add(keyItem);
+                    }
                     else value = cl.getColumnName() + " (" + cl.getType() + ")";
 
                     TreeItem<String> clItem = new TreeItem<>(value);
@@ -140,6 +142,12 @@ public class MainController {
         createIndex.setOnAction(this::addNewIndex);
         indexContextMenu.getItems().add(createIndex);
 
+        // Create a ContextMenu and MenuItem for dropping an index
+        dropIndexContextMenu = new ContextMenu();
+        dropIndex = new MenuItem("Drop Index");
+        dropIndex.setOnAction(this::dropIndexFromContext);
+        dropIndexContextMenu.getItems().add(dropIndex);
+
 
         mainTreeView.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
             // Set up the context menu to display when the root item is right-clicked
@@ -176,11 +184,22 @@ public class MainController {
                         indexContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
                         event.consume();
                     }
+
+                    List<Index> indices = tb.getIndexes();
+                    for (Index index : indices) {
+                        // Set up the context menu to display when an index item is right-clicked
+                        if (selectedItem.getValue().equals(index.getIndexName())) {
+                            dropIndexContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
+                            event.consume();
+                        }
+                    }
+
                 }
             }
 
         });
     }
+
 
     //////////////////////////////////////////////////////////
     // Methods for Context Menus /////////////////////////////
@@ -300,6 +319,30 @@ public class MainController {
         crtDatabase = null;
     }
 
+    private void dropIndexFromContext(ActionEvent event) {
+        TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
+        String indexName = selectedItem.getValue();
+        String tableName = selectedItem.getParent().getParent().getValue();
+
+        String dbName = selectedItem.getParent().getParent().getParent().getParent().getValue();
+        crtDatabase = myDBMS.getDatabaseByName(dbName);
+
+        List<Table> tableList =  crtDatabase.getTables();
+        for (Table tb: tableList) {
+            if (tb.getTableName().equals(tableName)){
+                List<Index> indices = tb.getIndexes();
+                for (Index ix: indices) {
+                    if (ix.getIndexName().equals(indexName)){
+                        tb.dropIndex(ix);
+                    }
+                }
+            }
+        }
+
+        saveDBMSToXML(myDBMS);
+        resultTextArea.setText("Index " + indexName + " was dropped!");
+        crtDatabase = null;
+    }
 
     ///////////////////////////////////////////////////////////
     // Methods for SQL Statements /////////////////////////////
@@ -444,4 +487,3 @@ public class MainController {
         saveDBMSToXML(myDBMS);
     }
 }
-
