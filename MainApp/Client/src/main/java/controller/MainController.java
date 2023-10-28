@@ -38,6 +38,8 @@ public class MainController {
     private MenuItem createIndex;
     private ContextMenu dropIndexContextMenu;
     private MenuItem dropIndex;
+    private ContextMenu createFKContextMenu;
+    private MenuItem createFK;
 
     private Databases myDBMS;
     private DataBase crtDatabase;
@@ -49,6 +51,8 @@ public class MainController {
 
     public void refreshTree(ActionEvent event){
         init();
+        resultTextArea.setText("");
+        resultTextArea.setStyle("-fx-text-fill: black;");
     }
 
     public void init() {
@@ -80,6 +84,12 @@ public class MainController {
                         keys_value = "PK_" + tb.getTableName();
                         TreeItem<String> keyItem = new TreeItem<>(keys_value);
                         keys.getChildren().add(keyItem);
+                    }
+
+                    else if (tb.getForeignKeys().stream().map(fk ->
+                            fk.getFkAttribute().toLowerCase()).toList().contains(cl.getColumnName().toLowerCase())) {
+                        key = "FK";
+                        value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
                     }
                     else value = cl.getColumnName() + " (" + cl.getType() + ")";
 
@@ -148,6 +158,12 @@ public class MainController {
         dropIndex.setOnAction(this::dropIndexFromContext);
         dropIndexContextMenu.getItems().add(dropIndex);
 
+        // Create a ContextMenu and MenuItem for creating a foreign key
+        createFKContextMenu = new ContextMenu();
+        createFK = new MenuItem("Create Foreign Key");
+        createFK.setOnAction(this::addFK);
+        createFKContextMenu.getItems().add(createFK);
+
 
         mainTreeView.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
             // Set up the context menu to display when the root item is right-clicked
@@ -182,6 +198,12 @@ public class MainController {
                     // Set up the context menu to display when the "Indexes" item is right-clicked
                     if (selectedItem.getValue().equals("Indexes")) {
                         indexContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
+                        event.consume();
+                    }
+
+                    // Set up the context menu to display when the "Keys" item is right-clicked
+                    if (selectedItem.getValue().equals("Keys")) {
+                        createFKContextMenu.show(mainTreeView, event.getScreenX(), event.getScreenY());
                         event.consume();
                     }
 
@@ -232,12 +254,6 @@ public class MainController {
         TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
         String databaseName = selectedItem.getValue();
 
-        List<DataBase> databaseList = myDBMS.listDatabases();
-        if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name does not exist. Try again!");
-            return;
-        }
-
         DropDatabase(databaseName);
         resultTextArea.setText("Database " + databaseName + " was dropped!");
     }
@@ -280,9 +296,15 @@ public class MainController {
         crtDatabase = myDBMS.getDatabaseByName(dbName);
 
         List<Table> tableList =  crtDatabase.getTables();
-        if (!tableList.stream().map(table -> table.getTableName().toLowerCase()).toList().contains(tableName.toLowerCase())) {
-            resultTextArea.setText("Table name " + tableName +" do not exist in " + crtDatabase.getDatabaseName() +" database. Try again!");
-            return;
+        for (Table table: tableList){
+            List<ForeignKey> foreignKeyList = table.getForeignKeys();
+            for (ForeignKey fk: foreignKeyList) {
+                if (tableName.equals(fk.getRefTable())){
+                    resultTextArea.setStyle("-fx-text-fill: red;");
+                    resultTextArea.setText("Could not drop object " + tableName + " because it is referenced by a FOREIGN KEY constraint.");
+                    return;
+                }
+            }
         }
 
         DropTable(tableName);
@@ -344,6 +366,35 @@ public class MainController {
         crtDatabase = null;
     }
 
+    private void addFK(ActionEvent event) {
+        // Load the FXML file and create a new stage
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("/mainapp/events/createfk-view.fxml"));
+        Stage dialogStage = new Stage();
+        // Set the owner of the dialog (main stage)
+        dialogStage.initOwner(mainTreeView.getScene().getWindow());
+        try {
+            // Load the scene from the FXML file
+            Scene scene = new Scene(loader.load());
+
+            // Set the scene and show the dialog
+            dialogStage.setScene(scene);
+
+            TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
+            String dbName = selectedItem.getParent().getParent().getParent().getValue();
+            String tbName = selectedItem.getParent().getValue();
+            crtDatabase = myDBMS.getDatabaseByName(dbName);
+
+            // Set the controller for the dialog
+            CreateFkController controller = loader.getController();
+            controller.setAttr(mainTreeView, myDBMS, crtDatabase, tbName, resultTextArea);
+
+            dialogStage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        crtDatabase = null;
+    }
+
     ///////////////////////////////////////////////////////////
     // Methods for SQL Statements /////////////////////////////
 
@@ -384,7 +435,7 @@ public class MainController {
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name do not exist. Try again!");
+            resultTextArea.setText("This database name does not exist. Try again!");
             return true;
         }
 
@@ -408,7 +459,7 @@ public class MainController {
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name already exist. Try again!");
+            resultTextArea.setText("This database name already exists. Try again!");
             return true;
         }
 
@@ -433,7 +484,7 @@ public class MainController {
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name do not exist. Try again!");
+            resultTextArea.setText("This database name does not exist. Try again!");
             return true;
         }
 
@@ -463,7 +514,7 @@ public class MainController {
 
         List<Table> tableList =  crtDatabase.getTables();
         if (!tableList.stream().map(table -> table.getTableName().toLowerCase()).toList().contains(tableName.toLowerCase())) {
-            resultTextArea.setText("Table name " + tableName +" do not exist in " + crtDatabase.getDatabaseName() +" database. Try again!");
+            resultTextArea.setText("Table name " + tableName +" does not exist in " + crtDatabase.getDatabaseName() +" database. Try again!");
             return true;
         }
 

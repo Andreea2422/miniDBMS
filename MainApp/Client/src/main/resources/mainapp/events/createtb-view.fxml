@@ -13,19 +13,21 @@
    <children>
       <AnchorPane prefHeight="474.0" prefWidth="674.0">
          <children>
-            <Label layoutX="86.0" layoutY="77.0" prefHeight="30.0" prefWidth="100.0" text=" Column Name" textAlignment="CENTER" />
-            <Label layoutX="337.0" layoutY="77.0" prefHeight="30.0" prefWidth="100.0" text="Data Type" textAlignment="CENTER" />
-            <Label layoutX="486.0" layoutY="77.0" prefHeight="30.0" prefWidth="100.0" text="Primary key?" textAlignment="CENTER" />
+            <Label layoutX="73.0" layoutY="77.0" prefHeight="30.0" prefWidth="100.0" text=" Column Name" textAlignment="CENTER" />
+            <Label layoutX="273.0" layoutY="77.0" prefHeight="30.0" prefWidth="100.0" text="Data Type" textAlignment="CENTER" />
+            <Label layoutX="386.0" layoutY="77.0" prefHeight="30.0" prefWidth="72.0" text="Primary key?" textAlignment="CENTER" />
             <ScrollPane fx:id="columnDetailsScrollPane" layoutX="32.0" layoutY="108.0" prefHeight="265.0" prefWidth="619.0">
                <content>
                   <VBox fx:id="columnDetailsVBox" prefHeight="262.0" prefWidth="615.0">
                      <children>
                         <AnchorPane fx:id="anchorColumnDetails" prefHeight="44.0" prefWidth="615.0">
                            <children>
-                              <TextField fx:id="columnName" layoutX="14.0" layoutY="14.0" prefHeight="26.0" prefWidth="207.0" />
-                              <ComboBox fx:id="dataType" editable="true" layoutX="279.0" layoutY="14.0" prefWidth="150.0" />
-                              <CheckBox fx:id="primaryKeyCheckbox" layoutX="485.0" layoutY="17.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="18.0" />
-                              <Button fx:id="addColumnButton" layoutX="576.0" layoutY="14.0" mnemonicParsing="false" onAction="#addColumn" text="+" />
+                              <TextField fx:id="columnName" layoutX="14.0" layoutY="14.0" prefHeight="26.0" prefWidth="165.0" />
+                              <ComboBox fx:id="dataType" editable="true" layoutX="204.0" layoutY="12.0" prefWidth="150.0" />
+                              <CheckBox fx:id="primaryKeyCheckbox" layoutX="380.0" layoutY="16.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="18.0" />
+                              <Button fx:id="addColumnButton" layoutX="576.0" layoutY="12.0" mnemonicParsing="false" onAction="#addColumn" text="+" />
+                              <CheckBox fx:id="uniqueKeyCheckbox" layoutX="453.0" layoutY="16.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="18.0" />
+                              <CheckBox fx:id="notnullCheckbox" layoutX="521.0" layoutY="18.0" mnemonicParsing="false" prefHeight="18.0" prefWidth="18.0" />
                            </children>
                         </AnchorPane>
                      </children>
@@ -35,6 +37,8 @@
             <TextField fx:id="tbNameField" layoutX="212.0" layoutY="28.0" prefHeight="26.0" prefWidth="258.0" />
             <Label layoutX="60.0" layoutY="26.0" prefHeight="30.0" prefWidth="125.0" text=" Input Table Name:" />
             <Button layoutX="545.0" layoutY="393.0" mnemonicParsing="false" onAction="#addTable" text="Create" />
+            <Label layoutX="470.0" layoutY="77.0" prefHeight="30.0" prefWidth="63.0" text="Is Unique?" textAlignment="CENTER" />
+            <Label layoutX="545.0" layoutY="77.0" prefHeight="30.0" prefWidth="72.0" text="Not Null?" textAlignment="CENTER" />
          </children>
       </AnchorPane>
    </children>

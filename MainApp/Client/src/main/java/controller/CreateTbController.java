@@ -35,6 +35,10 @@ public class CreateTbController implements Initializable {
     @FXML
     private CheckBox primaryKeyCheckbox;
     @FXML
+    private CheckBox uniqueKeyCheckbox;
+    @FXML
+    private CheckBox notnullCheckbox;
+    @FXML
     private Button addColumnButton;
     @FXML
     private ScrollPane columnDetailsScrollPane;
@@ -104,31 +108,45 @@ public class CreateTbController implements Initializable {
         columnName.setLayoutX(14.0);
         columnName.setLayoutY(14.0);
         columnName.setPrefHeight(26.0);
-        columnName.setPrefWidth(207.0);
+        columnName.setPrefWidth(165.0);
 
         ComboBox<String> dataType = new ComboBox<>();
         dataType.setId("dataType");
         dataType.setEditable(true);
-        dataType.setLayoutX(279.0);
-        dataType.setLayoutY(14.0);
+        dataType.setLayoutX(204.0);
+        dataType.setLayoutY(12.0);
         dataType.setPrefWidth(150.0);
         dataType.setItems(dataTypeItems);
 //        applyEventTo(dataType);
 
         CheckBox primaryKeyCheckbox = new CheckBox();
         primaryKeyCheckbox.setId("primaryKeyCheckbox");
-        primaryKeyCheckbox.setLayoutX(485.0);
-        primaryKeyCheckbox.setLayoutY(17.0);
+        primaryKeyCheckbox.setLayoutX(380.0);
+        primaryKeyCheckbox.setLayoutY(16.0);
         primaryKeyCheckbox.setPrefHeight(18.0);
         primaryKeyCheckbox.setPrefWidth(18.0);
+
+        CheckBox uniqueKeyCheckbox = new CheckBox();
+        uniqueKeyCheckbox.setId("uniqueKeyCheckbox");
+        uniqueKeyCheckbox.setLayoutX(453.0);
+        uniqueKeyCheckbox.setLayoutY(16.0);
+        uniqueKeyCheckbox.setPrefHeight(18.0);
+        uniqueKeyCheckbox.setPrefWidth(18.0);
+
+        CheckBox notnullCheckbox = new CheckBox();
+        notnullCheckbox.setId("notnullCheckbox");
+        notnullCheckbox.setLayoutX(521.0);
+        notnullCheckbox.setLayoutY(18.0);
+        notnullCheckbox.setPrefHeight(18.0);
+        notnullCheckbox.setPrefWidth(18.0);
 
         Button addNewColumnButton = new Button();
         addNewColumnButton.setOnAction(this::addColumn);
         addNewColumnButton.setLayoutX(576.0);
-        addNewColumnButton.setLayoutY(14.0);
+        addNewColumnButton.setLayoutY(12.0);
         addNewColumnButton.setText("+");
 
-        newColumnAnchorPane.getChildren().addAll(columnName, dataType, primaryKeyCheckbox, addNewColumnButton);
+        newColumnAnchorPane.getChildren().addAll(columnName, dataType, primaryKeyCheckbox, uniqueKeyCheckbox, notnullCheckbox, addNewColumnButton);
         columnDetailsVBox.getChildren().add(newColumnAnchorPane);
 
         // Set the ScrollPane to scroll if the content exceeds its height
@@ -145,6 +163,7 @@ public class CreateTbController implements Initializable {
     public void addTable(ActionEvent actionEvent){
         List<Column> columns = new ArrayList<>();
         List<PrimaryKey> primaryKeys = new ArrayList<>();
+        List<UniqueKey> uniqueKeys = new ArrayList<>();
         List<ForeignKey> foreignKeys = new ArrayList<>();
         List<Index> indexes = new ArrayList<>();
 
@@ -175,12 +194,19 @@ public class CreateTbController implements Initializable {
                 TextField columnName = (TextField) columnDetailsAnchorPane.lookup("#columnName");
                 ComboBox<String> dataType = (ComboBox<String>) columnDetailsAnchorPane.lookup("#dataType");
                 CheckBox primaryKeyCheckbox = (CheckBox) columnDetailsAnchorPane.lookup("#primaryKeyCheckbox");
+                CheckBox uniqueKeyCheckbox = (CheckBox) columnDetailsAnchorPane.lookup("#uniqueKeyCheckbox");
+                CheckBox notnullCheckbox = (CheckBox) columnDetailsAnchorPane.lookup("#notnullCheckbox");
 
                 String columnNameValue = columnName.getText();
                 String dataTypeValue = dataType.getValue();
                 boolean isPrimaryKey = primaryKeyCheckbox.isSelected();
+                boolean isUniqueKey = uniqueKeyCheckbox.isSelected();
+                String isnull;
+                if (notnullCheckbox.isSelected()) {
+                    isnull = "0";
+                } else isnull = "1";
 
-                Column newColumn = new Column(columnNameValue, dataTypeValue, isPrimaryKey);
+                Column newColumn = new Column(columnNameValue, dataTypeValue, isPrimaryKey, isnull);
                 columns.add(newColumn);
 
                 if (isPrimaryKey) {
@@ -193,6 +219,13 @@ public class CreateTbController implements Initializable {
                     indexes.add(pk_index);
                 }
 
+                if (isUniqueKey) {
+                    UniqueKey newUniqueKey = new UniqueKey(columnNameValue);
+                    uniqueKeys.add(newUniqueKey);
+                    List<String> columnsName = new ArrayList<>();
+                    columnsName.add(columnNameValue);
+                }
+
                 if (columnNameValue.isEmpty()) {
                     resultTextArea.setText("Invalid column name");
                     return;
@@ -203,7 +236,7 @@ public class CreateTbController implements Initializable {
             }
         }
 
-        Table table = new Table(tableName, columns, primaryKeys, foreignKeys);
+        Table table = new Table(tableName, columns, primaryKeys, uniqueKeys, foreignKeys);
         table.setIndexes(indexes);
         crtDatabase.createTable(table);
         saveDBMSToXML(myDBMS);

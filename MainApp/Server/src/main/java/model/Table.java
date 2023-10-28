@@ -7,7 +7,7 @@ import java.util.List;
 
 @XmlAccessorType(XmlAccessType.FIELD )
 @XmlRootElement(name = "tables")
-@XmlType(name = "tables", propOrder = { "tableName", "fileName", "columns", "primaryKeys", "foreignKeys", "indexes" })
+@XmlType(name = "tables", propOrder = { "tableName", "fileName", "columns", "primaryKeys", "uniqueKeys", "foreignKeys", "indexes" })
 public class Table implements Serializable {
     @XmlAttribute
     private String tableName;
@@ -19,6 +19,9 @@ public class Table implements Serializable {
     @XmlElement(name = "pkAttribute")
     @XmlElementWrapper(name = "primaryKey")
     private List<PrimaryKey> primaryKeys;
+    @XmlElement(name = "UniqueAttribute")
+    @XmlElementWrapper(name = "uniqueKeys")
+    private List<UniqueKey> uniqueKeys;
     @XmlElement(name = "foreignKey")
     @XmlElementWrapper(name = "foreignKeys")
     private List<ForeignKey> foreignKeys;
@@ -33,21 +36,26 @@ public class Table implements Serializable {
         this.tableName = name;
         this.columns = new ArrayList<>();
         this.primaryKeys = new ArrayList<>();
+        this.uniqueKeys = new ArrayList<>();
         this.foreignKeys = new ArrayList<>();
         this.indexes = new ArrayList<>();
     }
 
-    public Table(String tableName, List<Column> columns, List<PrimaryKey> primaryKeys, List<ForeignKey> foreignKeys) {
+    public Table(String tableName, List<Column> columns, List<PrimaryKey> primaryKeys, List<UniqueKey> uniqueKeys, List<ForeignKey> foreignKeys) {
         this.tableName = tableName;
         this.fileName =  tableName + ".bin" ;
         this.columns = columns;
         this.primaryKeys = primaryKeys;
+        this.uniqueKeys = uniqueKeys;
         this.foreignKeys = foreignKeys;
         this.indexes = new ArrayList<>();
     }
 
     public void createIndex(Index newIndex) {
         indexes.add(newIndex);
+    }
+    public void createForeignKey(ForeignKey newfk) {
+        foreignKeys.add(newfk);
     }
     public void dropIndex(Index index) { indexes.remove(index); }
 
@@ -81,6 +89,14 @@ public class Table implements Serializable {
 
     public void setPrimaryKeys(List<PrimaryKey> primaryKeys) {
         this.primaryKeys = primaryKeys;
+    }
+
+    public List<UniqueKey> getUniqueKeys() {
+        return uniqueKeys;
+    }
+
+    public void setUniqueKeys(List<UniqueKey> uniqueKeys) {
+        this.uniqueKeys = uniqueKeys;
     }
 
     public List<ForeignKey> getForeignKeys() {

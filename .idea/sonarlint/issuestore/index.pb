@@ -11,6 +11,23 @@ K
 MainApp/Server/build.gradle,9\a\9a04b371045c2f77f425f118b64e365a83074df7
 K
 MainApp/Client/build.gradle,8\4\84314ab4843a6876682f0d9219d08019349dc86b
-:
-
-.gitignore,a\5\a5cc2925ca8258af241be7e5b0381edf30266302
+]
+-MainApp/Server/src/main/java/StartServer.java,f\c\fcecc3bef877305921962242ffdcd26eac85ef25
+b
+2MainApp/Client/src/main/java/HelloApplication.java,2\f\2f5f23b2108d35a2f74bf029fea13ceaf6628343
+o
+?MainApp/Client/src/main/java/controller/CreateDbController.java,e\9\e92ceccd34666858096d79fcaeb2a5c3abd90555
+l
+<MainApp/Client/src/main/java/controller/HelloController.java,f\d\fd3c0b8bf9bd26dc640bc083b6eadb2927050789
+]
+-MainApp/Server/src/main/java/model/Index.java,2\d\2da27bfbff1a6543d155b2df6d385ce2fecf9104
+]
+-MainApp/Server/src/main/java/utils/Utils.java,d\0\d0292e3f9a0d197baa688f96c033f9ba512c9258
+P
+ MainApp/Server/files/Catalog.xml,b\5\b5a2a284ed1ce6cc992d6f4481396de00d007ca0
+o
+?MainApp/Client/src/main/java/controller/CreateTbController.java,f\d\fdc7bd25f2ae595617671317607c80428112726a
+b
+2MainApp/Server/src/main/java/model/PrimaryKey.java,a\d\adc2b4bafe7943d85fec55f52803d6cf11ec6d91
+r
+BMainApp/Client/src/main/java/controller/CreateIndexController.java,f\5\f509af3cbc70cb002ff449ea62190cc5449aae40

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="464.0" prefWidth="674.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CreateFkController">
+   <children>
+      <AnchorPane prefHeight="474.0" prefWidth="674.0">
+         <children>
+            <Label layoutX="61.0" layoutY="249.0" prefHeight="30.0" prefWidth="100.0" text="Choose Table:" textAlignment="CENTER" />
+            <Label layoutX="371.0" layoutY="26.0" prefHeight="30.0" prefWidth="118.0" text="Current Table Name:" />
+            <TextField fx:id="tbNameField" editable="false" layoutX="490.0" layoutY="28.0" prefHeight="26.0" prefWidth="166.0" />
+            <Label layoutX="61.0" layoutY="183.0" prefHeight="30.0" prefWidth="188.0" text="Choose column from current table:" />
+            <Button layoutX="534.0" layoutY="388.0" mnemonicParsing="false" onAction="#addForeignKey" text="Create" />
+            <Label layoutX="32.0" layoutY="28.0" prefHeight="30.0" prefWidth="141.0" text="Current Database name: " />
+            <TextField fx:id="dbNameField" editable="false" layoutX="175.0" layoutY="30.0" prefHeight="26.0" prefWidth="166.0" />
+            <ComboBox fx:id="currentColumnName" editable="true" layoutX="272.0" layoutY="185.0" prefHeight="26.0" prefWidth="188.0" />
+            <ComboBox fx:id="tableComboBox" editable="true" layoutX="166.0" layoutY="253.0" onAction="#isSelected" prefHeight="26.0" prefWidth="142.0" />
+            <ComboBox fx:id="columnComboBox" editable="true" layoutX="478.0" layoutY="253.0" prefHeight="26.0" prefWidth="142.0" />
+            <Label layoutX="366.0" layoutY="251.0" prefHeight="30.0" prefWidth="100.0" text="Choose Column:" textAlignment="CENTER" />
+         </children>
+      </AnchorPane>
+   </children>
+</VBox>

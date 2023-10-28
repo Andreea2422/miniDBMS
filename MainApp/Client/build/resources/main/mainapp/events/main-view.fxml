@@ -89,7 +89,6 @@
                 <content>
                   <AnchorPane id="Content" minHeight="-1.0" minWidth="-1.0" prefHeight="266.0" prefWidth="576.0">
                     <children>
-                      <Label alignment="CENTER" font="$x1" layoutX="6.0" style="&#10;" text="View" textAlignment="CENTER" textFill="$x2" wrapText="false" />
                               <TextArea fx:id="sqlField" layoutX="4.0" layoutY="4.0" prefHeight="258.0" prefWidth="567.0" />
                     </children>
                   </AnchorPane>
@@ -99,14 +98,6 @@
                      <content>
                         <AnchorPane id="Content" minHeight="-1.0" minWidth="-1.0" prefHeight="282.0" prefWidth="576.0">
                            <children>
-                              <Label alignment="CENTER" layoutX="6.0" style="&#10;" text="View" textAlignment="CENTER" wrapText="false">
-                                 <font>
-                                    <Font size="18.0" fx:id="x11" />
-                                 </font>
-                                 <textFill>
-                                    <Color red="0.624" green="0.624" blue="0.624" fx:id="x21" />
-                                 </textFill>
-                              </Label>
                               <TextArea fx:id="resultTextArea" editable="false" layoutX="5.0" layoutY="6.0" prefHeight="269.0" prefWidth="566.0" />
                            </children>
                         </AnchorPane>
