@@ -54,10 +54,21 @@ public class Table implements Serializable {
     public void createIndex(Index newIndex) {
         indexes.add(newIndex);
     }
+
     public void createForeignKey(ForeignKey newfk) {
         foreignKeys.add(newfk);
     }
+
     public void dropIndex(Index index) { indexes.remove(index); }
+
+    public Column getColumnByName(String name) {
+        for (Column column: this.columns) {
+            if (column.getColumnName().equalsIgnoreCase(name)) {
+                return column;
+            }
+        }
+        return null;
+    }
 
     public String getTableName() {
         return tableName;

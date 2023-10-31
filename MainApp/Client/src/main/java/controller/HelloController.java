@@ -1,5 +1,6 @@
 package controller;
 
+import com.mongodb.client.MongoClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -11,10 +12,6 @@ import javafx.stage.Stage;
 import model.Databases;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.net.Socket;
-
-import static utils.Utils.loadDBMSFromXML;
 
 public class HelloController {
     @FXML
@@ -22,6 +19,7 @@ public class HelloController {
 
     private Databases myDBMS;
 
+    private MongoClient mongoClient;
 
     public void setDatabases(Databases myDBMS) {
         this.myDBMS = myDBMS;
@@ -35,9 +33,14 @@ public class HelloController {
 
         MainController mainController = fxmlLoader.getController();
         mainController.setDatabases(myDBMS);
+        mainController.setMongo(mongoClient);
 
         Scene scene = new Scene(root);
         stage.setScene(scene);
         stage.show();
+    }
+
+    public void setMongo(MongoClient mongo){
+        this.mongoClient = mongo;
     }
 }

@@ -1,5 +1,6 @@
 package controller;
 
+import com.mongodb.client.MongoClient;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
@@ -25,9 +26,14 @@ public class CreateDbController {
     private Databases myDBMS;
     private DataBase crtDatabase;
     private TextArea resultTextArea;
+    private MongoClient mongoClient;
 
     public void setMainTreeView(TreeView<String> mainTreeView) {
         this.mainTreeView = mainTreeView;
+    }
+
+    public void setMongo(MongoClient mongo){
+        this.mongoClient = mongo;
     }
 
     public void setDBandField(Databases myDBMS, DataBase crtDatabase, TextArea resultTextArea) {
@@ -63,6 +69,7 @@ public class CreateDbController {
 
         resultTextArea.setText("Database " + databaseName + " was created!");
         crtDatabase = myDBMS.getDatabaseByName(databaseName);
+        mongoClient.getDatabase(databaseName);
     }
 
 

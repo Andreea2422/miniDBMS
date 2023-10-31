@@ -1,3 +1,5 @@
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import controller.HelloController;
 import controller.MainController;
 import javafx.application.Application;
@@ -26,8 +28,19 @@ public class HelloApplication extends Application {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/mainapp/events/hello-view.fxml"));
             Parent root = fxmlLoader.load();
 
+            // mongodb
+            String uri = "mongodb+srv://andreea:crytina31@isgbd.tovblw2.mongodb.net/?retryWrites=true&w=majority";
+            MongoClient mongoClient = null;
+            try {
+                mongoClient = MongoClients.create(uri);
+            }
+            catch(Exception e) {
+                System.out.println(e.getMessage());
+            }
+
             HelloController helloController = fxmlLoader.getController();
             helloController.setDatabases(myDBMS);
+            helloController.setMongo(mongoClient);
 
             Scene scene = new Scene(root, 320, 240);
             stage.setScene(scene);

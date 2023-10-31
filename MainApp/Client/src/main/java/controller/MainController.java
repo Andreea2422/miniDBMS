@@ -1,21 +1,30 @@
 package controller;
 
 
+import com.mongodb.MongoException;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.result.InsertOneResult;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.Stage;
 import model.*;
+import org.bson.Document;
 
-import java.io.*;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.mongodb.client.model.Filters.eq;
 import static utils.Utils.saveDBMSToXML;
 
 public class MainController {
@@ -43,10 +52,15 @@ public class MainController {
 
     private Databases myDBMS;
     private DataBase crtDatabase;
+    private MongoClient mongoClient;
 
     public void setDatabases(Databases myDBMS) {
         this.myDBMS = myDBMS;
         init();
+    }
+
+    public void setMongo(MongoClient mongoClient){
+        this.mongoClient = mongoClient;
     }
 
     public void refreshTree(ActionEvent event){
@@ -243,6 +257,7 @@ public class MainController {
             CreateDbController controller = loader.getController();
             controller.setMainTreeView(mainTreeView);
             controller.setDBandField(myDBMS, crtDatabase, resultTextArea);
+            controller.setMongo(mongoClient);
 
             dialogStage.show();
         } catch (IOException e) {
@@ -254,7 +269,11 @@ public class MainController {
         TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
         String databaseName = selectedItem.getValue();
 
-        DropDatabase(databaseName);
+        myDBMS.dropDatabase(databaseName);
+        saveDBMSToXML(myDBMS);
+
+        MongoDatabase database = mongoClient.getDatabase(databaseName);
+        database.drop();
         resultTextArea.setText("Database " + databaseName + " was dropped!");
     }
 
@@ -279,6 +298,7 @@ public class MainController {
             CreateTbController controller = loader.getController();
             controller.setMainTreeView(mainTreeView);
             controller.setDBandField(myDBMS, crtDatabase, resultTextArea);
+            controller.setMongo(mongoClient);
 
             dialogStage.show();
         } catch (IOException e) {
@@ -307,7 +327,14 @@ public class MainController {
             }
         }
 
-        DropTable(tableName);
+        crtDatabase.dropTable(tableName);
+        saveDBMSToXML(myDBMS);
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        // drop table
+        database.getCollection(tableName).drop();
+
         resultTextArea.setText("Table " + tableName + " was dropped!");
         crtDatabase = null;
     }
@@ -415,6 +442,12 @@ public class MainController {
         if (ProcessDropTable()) {
             return;
         }
+        if (ProcessInsertIntoTable()){
+            return;
+        }
+        if (ProcessDeleteFromTable()){
+            return;
+        }
         else {
             resultTextArea.setText("SQL Statement unknown!");
         }
@@ -463,7 +496,9 @@ public class MainController {
             return true;
         }
 
-        CreateDatabase(databaseName);
+        myDBMS.createDatabase(databaseName);
+        saveDBMSToXML(myDBMS);
+        mongoClient.getDatabase(databaseName);
         resultTextArea.setText("Database " + databaseName + " was created!");
         crtDatabase = myDBMS.getDatabaseByName(databaseName);
         return true;
@@ -488,7 +523,12 @@ public class MainController {
             return true;
         }
 
-        DropDatabase(databaseName);
+        myDBMS.dropDatabase(databaseName);
+        saveDBMSToXML(myDBMS);
+
+        MongoDatabase database = mongoClient.getDatabase(databaseName);
+        database.drop();
+
         resultTextArea.setText("Database " + databaseName + " was dropped!");
         crtDatabase = null;
         return true;
@@ -518,23 +558,181 @@ public class MainController {
             return true;
         }
 
-        DropTable(tableName);
+        crtDatabase.dropTable(tableName);
+        saveDBMSToXML(myDBMS);
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        // drop table
+        database.getCollection(tableName).drop();
+
         resultTextArea.setText("Table " + tableName + " was dropped!");
         return true;
     }
 
-    public void CreateDatabase(String databaseName) {
-        myDBMS.createDatabase(databaseName);
-        saveDBMSToXML(myDBMS);
+
+    public boolean ProcessInsertIntoTable() {
+        // Define the regex pattern to match the INSERT INTO statement
+        String insertPattern = "(insert into) (\\S+).*\\((.*?)\\).*(values).*\\((.*?)\\)(.*\\;?);";
+
+        String tableName ;
+        List<String> columnNames;
+        List<String> columnValues;
+
+        // Compile the regex pattern and create a matcher
+        Pattern pattern = Pattern.compile(insertPattern);
+        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
+
+        // Check if the provided SQL command matches the expected pattern
+        if (!matcher.matches()) {
+            resultTextArea.setText("Invalid SQL command. Please provide a valid INSERT INTO statement.");
+            return false;
+        }
+
+        // Check if a database is selected
+        if (crtDatabase == null) {
+            resultTextArea.setText("Please select a database to use first!");
+            return false;
+        }
+
+        // Extract information from the matched SQL command
+        tableName = matcher.group(2).trim();
+        columnNames = Arrays.stream(matcher.group(3).split(",")).map(String::trim).toList();
+        columnValues = Arrays.stream(matcher.group(5).split(",")).map(String::trim).toList();
+
+        // Check if the specified table exists in the current database
+        List<Table> tableList = crtDatabase.getTables();
+        if (tableList.stream().noneMatch(table -> table.getTableName().equalsIgnoreCase(tableName))) {
+            resultTextArea.setText("Table " + tableName + " does not exist in the " + crtDatabase.getDatabaseName() + " database. Please try again.");
+            return false;
+        }
+
+        Table crtTable = new Table();
+        for (Table tb: tableList) {
+            if (tb.getTableName().equals(tableName)){
+                crtTable = tb;
+            }
+        }
+
+        for (String column : columnNames) {
+            if ( crtTable.getColumnByName(column) == null ){
+                resultTextArea.setText("Column " + column + " does not exist in the " + crtTable.getTableName() + " table. Please try again.");
+                return false;
+            }
+        }
+
+        // Verify the primary key constraint
+        String primaryKeys = null;
+        String values = null;
+
+        for (int i=0; i<columnNames.size();i++){
+            if ( crtTable.getPrimaryKeys().stream().map(primaryKey -> primaryKey.getPkAttribute().toLowerCase(Locale.ROOT)).toList().contains(columnNames.get(i).toLowerCase()) ){
+                if (primaryKeys == null){
+                    primaryKeys = columnValues.get(i);
+                }else{
+                    primaryKeys = primaryKeys + "#" + columnValues.get(i);
+                }
+            }else{
+                if (values == null){
+                    values = columnValues.get(i);
+                }else{
+                    values = values + "#" + columnValues.get(i);
+                }
+            }
+        }
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        MongoCollection<Document> collection = database.getCollection(tableName);
+
+        if (!isPrimaryKeyValid(crtTable, columnNames, primaryKeys, collection)) {
+            return true;
+        }
+
+        try{
+            InsertOneResult result = collection.insertOne(new Document()
+                    .append("_id", primaryKeys.toString())
+                    .append("values", values));
+        } catch (MongoException me) {
+            resultTextArea.setText("Unable to insert due to an error: " + me);
+        }
+
+        resultTextArea.setText("Data was successfully inserted into the table " + tableName);
+        return true;
     }
 
-    public void DropDatabase(String databaseName) {
-        myDBMS.dropDatabase(databaseName);
-        saveDBMSToXML(myDBMS);
+    private boolean isPrimaryKeyValid(Table table, List <String> columnNames, String primaryKeyString , MongoCollection<Document> collection) {
+        // Validation logic to check if the primary key constraint is valid
+        // If the primary key constraint is valid, return true; otherwise, return false
+        List <PrimaryKey> primaryKeys = table.getPrimaryKeys();
+        for (PrimaryKey primaryKey: primaryKeys) {
+            if ( !columnNames.stream().map(String::toLowerCase).toList().contains(primaryKey.getPkAttribute().toLowerCase()) ){
+                resultTextArea.setText("Invalid list of columns. List of columns must contains all primary key fields.");
+                return false;
+            }
+        }
+        Document doc = collection.find(eq("_id", primaryKeyString)).first();
+        if (doc != null){
+            resultTextArea.setText("Primary key violation: A record with the same primary key already exists.");
+            return false;
+        }
+
+        return true;
     }
 
-    public void DropTable(String tableName) {
-        crtDatabase.dropTable(tableName);
-        saveDBMSToXML(myDBMS);
+    public boolean ProcessDeleteFromTable() {
+        String deletePattern = "(delete(\\s+)from)(\\s+)(\\S+)(\\s+)(where)(\\s+)(\\S+)(\\s+)(=)(\\s+)(\\S+).*;";
+
+        String tableName;
+
+        // Compile the regex pattern and create a matcher
+        Pattern pattern = Pattern.compile(deletePattern);
+        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
+
+        // Check if the provided SQL command matches the expected pattern
+        if (!matcher.matches()) {
+            resultTextArea.setText("Invalid SQL command. Please provide a valid INSERT INTO statement.");
+            return false;
+        }
+
+        // Check if a database is selected
+        if (crtDatabase == null) {
+            resultTextArea.setText("Please select a database to use first!");
+            return false;
+        }
+
+        // Extract information from the matched SQL command
+        tableName = matcher.group(4).trim();
+        String columnPK = matcher.group(8).trim();
+        String columnValue = matcher.group(12).trim();
+
+        List<Table> tableList = crtDatabase.getTables();
+        if (tableList.stream().noneMatch(table -> table.getTableName().equalsIgnoreCase(tableName))) {
+            resultTextArea.setText("Table " + tableName + " does not exist in the " + crtDatabase.getDatabaseName() + " database. Please try again.");
+            return false;
+        }
+
+        Table crtTable = new Table();
+        for (Table tb: tableList) {
+            if (tb.getTableName().equals(tableName)){
+                crtTable = tb;
+            }
+        }
+
+        if (crtTable.getColumns().stream().noneMatch(column -> column.getColumnName().equalsIgnoreCase(columnPK))) {
+            resultTextArea.setText("Column " + columnPK + " does not exist in the " + crtTable.getTableName() + " table. Please try again.");
+            return false;
+        }
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        //Creating a collection
+        MongoCollection<Document> collection = database.getCollection(tableName);
+        //Deleting a document
+        collection.deleteOne(Filters.eq("_id", columnValue));
+
+        resultTextArea.setText("Data was successfully deleted from the table " + tableName);
+        return true;
     }
+
 }

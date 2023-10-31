@@ -174,4 +174,39 @@
             </table>
         </tables>
     </database>
+    <database databaseName="testingAgain">
+        <tables>
+            <table tableName="table1" fileName="table1.bin">
+                <structure>
+                    <attribute columnName="id" type="int" isnull="0">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="col1" type="nvarchar(50)" isnull="0">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="col2" type="float" isnull="1">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>id</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <uniqueKeys>
+                    <UniqueAttribute>
+                        <ukAttribute>id</ukAttribute>
+                    </UniqueAttribute>
+                </uniqueKeys>
+                <foreignKeys/>
+                <IndexFiles>
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="table1">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
+            </table>
+        </tables>
+    </database>
 </databases>

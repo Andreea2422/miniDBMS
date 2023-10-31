@@ -1,5 +1,7 @@
 package controller;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -48,9 +50,14 @@ public class CreateTbController implements Initializable {
     private DataBase crtDatabase;
     private TextArea resultTextArea;
     private Button lastAddedButton;
+    private MongoClient mongoClient;
 
     public void setMainTreeView(TreeView<String> mainTreeView) {
         this.mainTreeView = mainTreeView;
+    }
+
+    public void setMongo(MongoClient mongo){
+        this.mongoClient = mongo;
     }
 
     public void setDBandField(Databases myDBMS, DataBase crtDatabase, TextArea resultTextArea) {
@@ -73,26 +80,7 @@ public class CreateTbController implements Initializable {
 
         // Set the items in the ComboBox
         dataType.setItems(dataTypeItems);
-
-//        applyEventTo(dataType);
     }
-
-//    private void applyEventTo(ComboBox<String> comboBox) {
-//        comboBox.getEditor().addEventFilter(KeyEvent.KEY_RELEASED, event -> {
-//            if (event.getCode().isLetterKey() || event.getCode().isDigitKey() || event.getCode().isWhitespaceKey()) {
-//                String filterText = comboBox.getEditor().getText().toLowerCase();
-//                ObservableList<String> filteredOptions = FXCollections.observableArrayList();
-//
-//                for (String option : dataTypeItems) {
-//                    if (option.toLowerCase().contains(filterText)) {
-//                        filteredOptions.add(option);
-//                    }
-//                }
-//
-//                comboBox.setItems(filteredOptions);
-//            }
-//        });
-//    }
 
     public void addColumn(ActionEvent event) {
         addColumnButton.setVisible(false);
@@ -117,7 +105,6 @@ public class CreateTbController implements Initializable {
         dataType.setLayoutY(12.0);
         dataType.setPrefWidth(150.0);
         dataType.setItems(dataTypeItems);
-//        applyEventTo(dataType);
 
         CheckBox primaryKeyCheckbox = new CheckBox();
         primaryKeyCheckbox.setId("primaryKeyCheckbox");
@@ -240,6 +227,14 @@ public class CreateTbController implements Initializable {
         table.setIndexes(indexes);
         crtDatabase.createTable(table);
         saveDBMSToXML(myDBMS);
+
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        //Creating a collection
+        database.createCollection(tableName);
+
+
         resultTextArea.setText("Table " + tableName + " created successfully!");
 
         // Close the dialog
