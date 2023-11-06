@@ -209,4 +209,72 @@
             </table>
         </tables>
     </database>
+    <database databaseName="Cofetarie">
+        <tables>
+            <table tableName="Produse" fileName="Produse.bin">
+                <structure>
+                    <attribute columnName="id" type="int" isnull="0">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="nume" type="nvarchar(50)" isnull="0">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="tip" type="int" isnull="0">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="price" type="float" isnull="1">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>id</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <uniqueKeys>
+                    <UniqueAttribute>
+                        <ukAttribute>nume</ukAttribute>
+                    </UniqueAttribute>
+                </uniqueKeys>
+                <foreignKeys>
+                    <foreignKey>
+                        <fkAttribute>tip</fkAttribute>
+                        <refAttribute>id</refAttribute>
+                        <refTable>Tipuri</refTable>
+                    </foreignKey>
+                </foreignKeys>
+                <IndexFiles>
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Produse">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
+            </table>
+            <table tableName="Tipuri" fileName="Tipuri.bin">
+                <structure>
+                    <attribute columnName="id" type="int" isnull="0">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="denumire" type="nvarchar(50)" isnull="0">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>id</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <uniqueKeys/>
+                <foreignKeys/>
+                <IndexFiles>
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Tipuri">
+                        <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
+            </table>
+        </tables>
+    </database>
 </databases>

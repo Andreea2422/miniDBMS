@@ -581,7 +581,7 @@ public class MainController {
 
         // Compile the regex pattern and create a matcher
         Pattern pattern = Pattern.compile(insertPattern);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
+        Matcher matcher = pattern.matcher(sqlField.getText());
 
         // Check if the provided SQL command matches the expected pattern
         if (!matcher.matches()) {
@@ -687,7 +687,7 @@ public class MainController {
 
         // Compile the regex pattern and create a matcher
         Pattern pattern = Pattern.compile(deletePattern);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
+        Matcher matcher = pattern.matcher(sqlField.getText());
 
         // Check if the provided SQL command matches the expected pattern
         if (!matcher.matches()) {
