@@ -59,11 +59,11 @@ public class MainController {
         init();
     }
 
-    public void setMongo(MongoClient mongoClient){
+    public void setMongo(MongoClient mongoClient) {
         this.mongoClient = mongoClient;
     }
 
-    public void refreshTree(ActionEvent event){
+    public void refreshTree(ActionEvent event) {
         init();
         resultTextArea.setText("");
         resultTextArea.setStyle("-fx-text-fill: black;");
@@ -90,22 +90,24 @@ public class MainController {
                     String value;
                     String keys_value;
 
-                    if (cl.isPrimaryKey())
-                    {
+                    if (cl.isPrimaryKey()) {
                         key = "PK";
-                        value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
+                        if (cl.getLength() != null) {
+                            value = cl.getColumnName() + " (" + key + ", " + cl.getType() + "(" + cl.getLength() + ")" + ")";
+                        } else value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
 
                         keys_value = "PK_" + tb.getTableName();
                         TreeItem<String> keyItem = new TreeItem<>(keys_value);
                         keys.getChildren().add(keyItem);
-                    }
-
-                    else if (tb.getForeignKeys().stream().map(fk ->
+                    } else if (tb.getForeignKeys().stream().map(fk ->
                             fk.getFkAttribute().toLowerCase()).toList().contains(cl.getColumnName().toLowerCase())) {
                         key = "FK";
-                        value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
-                    }
-                    else value = cl.getColumnName() + " (" + cl.getType() + ")";
+                        if (cl.getLength() != null){
+                            value = cl.getColumnName() + " (" + key + ", " + cl.getType() + "(" + cl.getLength() + ")" + ")";
+                        } else value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
+                    } else if (cl.getLength() != null) {
+                            value = cl.getColumnName() + " (" + cl.getType() + "(" + cl.getLength() + ")" + ")";
+                        } else value = cl.getColumnName() + " (" + cl.getType() + ")";
 
                     TreeItem<String> clItem = new TreeItem<>(value);
                     columns.getChildren().add(clItem);
@@ -265,7 +267,7 @@ public class MainController {
         }
     }
 
-    private void dropDatabaseFromContext(ActionEvent event){
+    private void dropDatabaseFromContext(ActionEvent event) {
         TreeItem<String> selectedItem = mainTreeView.getSelectionModel().getSelectedItem();
         String databaseName = selectedItem.getValue();
 
@@ -315,11 +317,11 @@ public class MainController {
         String dbName = selectedItem.getParent().getParent().getValue();
         crtDatabase = myDBMS.getDatabaseByName(dbName);
 
-        List<Table> tableList =  crtDatabase.getTables();
-        for (Table table: tableList){
+        List<Table> tableList = crtDatabase.getTables();
+        for (Table table : tableList) {
             List<ForeignKey> foreignKeyList = table.getForeignKeys();
-            for (ForeignKey fk: foreignKeyList) {
-                if (tableName.equals(fk.getRefTable())){
+            for (ForeignKey fk : foreignKeyList) {
+                if (tableName.equals(fk.getRefTable())) {
                     resultTextArea.setStyle("-fx-text-fill: red;");
                     resultTextArea.setText("Could not drop object " + tableName + " because it is referenced by a FOREIGN KEY constraint.");
                     return;
@@ -376,12 +378,12 @@ public class MainController {
         String dbName = selectedItem.getParent().getParent().getParent().getParent().getValue();
         crtDatabase = myDBMS.getDatabaseByName(dbName);
 
-        List<Table> tableList =  crtDatabase.getTables();
-        for (Table tb: tableList) {
-            if (tb.getTableName().equals(tableName)){
+        List<Table> tableList = crtDatabase.getTables();
+        for (Table tb : tableList) {
+            if (tb.getTableName().equals(tableName)) {
                 List<Index> indices = tb.getIndexes();
-                for (Index ix: indices) {
-                    if (ix.getIndexName().equals(indexName)){
+                for (Index ix : indices) {
+                    if (ix.getIndexName().equals(indexName)) {
                         tb.dropIndex(ix);
                     }
                 }
@@ -442,13 +444,12 @@ public class MainController {
         if (ProcessDropTable()) {
             return;
         }
-        if (ProcessInsertIntoTable()){
+        if (ProcessInsertIntoTable()) {
             return;
         }
-        if (ProcessDeleteFromTable()){
+        if (ProcessDeleteFromTable()) {
             return;
-        }
-        else {
+        } else {
             resultTextArea.setText("SQL Statement unknown!");
         }
     }
@@ -464,7 +465,7 @@ public class MainController {
             return false;
         }
 
-        databaseName = sqlField.getText().substring(4, sqlField.getText().length() -1);
+        databaseName = sqlField.getText().substring(4, sqlField.getText().length() - 1);
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
@@ -488,7 +489,7 @@ public class MainController {
             return false;
         }
 
-        databaseName = sqlField.getText().substring(16, sqlField.getText().length() -1);
+        databaseName = sqlField.getText().substring(16, sqlField.getText().length() - 1);
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
@@ -515,7 +516,7 @@ public class MainController {
             return false;
         }
 
-        databaseName = sqlField.getText().substring(14, sqlField.getText().length() -1);
+        databaseName = sqlField.getText().substring(14, sqlField.getText().length() - 1);
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
@@ -550,11 +551,11 @@ public class MainController {
             return true;
         }
 
-        tableName = sqlField.getText().substring(11, sqlField.getText().length() -1);
+        tableName = sqlField.getText().substring(11, sqlField.getText().length() - 1);
 
-        List<Table> tableList =  crtDatabase.getTables();
+        List<Table> tableList = crtDatabase.getTables();
         if (!tableList.stream().map(table -> table.getTableName().toLowerCase()).toList().contains(tableName.toLowerCase())) {
-            resultTextArea.setText("Table name " + tableName +" does not exist in " + crtDatabase.getDatabaseName() +" database. Try again!");
+            resultTextArea.setText("Table name " + tableName + " does not exist in " + crtDatabase.getDatabaseName() + " database. Try again!");
             return true;
         }
 
@@ -575,7 +576,7 @@ public class MainController {
         // Define the regex pattern to match the INSERT INTO statement
         String insertPattern = "(insert into) (\\S+).*\\((.*?)\\).*(values).*\\((.*?)\\)(.*\\;?);";
 
-        String tableName ;
+        String tableName;
         List<String> columnNames;
         List<String> columnValues;
 
@@ -608,14 +609,14 @@ public class MainController {
         }
 
         Table crtTable = new Table();
-        for (Table tb: tableList) {
-            if (tb.getTableName().equals(tableName)){
+        for (Table tb : tableList) {
+            if (tb.getTableName().equals(tableName)) {
                 crtTable = tb;
             }
         }
 
         for (String column : columnNames) {
-            if ( crtTable.getColumnByName(column) == null ){
+            if (crtTable.getColumnByName(column) == null) {
                 resultTextArea.setText("Column " + column + " does not exist in the " + crtTable.getTableName() + " table. Please try again.");
                 return false;
             }
@@ -625,17 +626,17 @@ public class MainController {
         String primaryKeys = null;
         String values = null;
 
-        for (int i=0; i<columnNames.size();i++){
-            if ( crtTable.getPrimaryKeys().stream().map(primaryKey -> primaryKey.getPkAttribute().toLowerCase(Locale.ROOT)).toList().contains(columnNames.get(i).toLowerCase()) ){
-                if (primaryKeys == null){
+        for (int i = 0; i < columnNames.size(); i++) {
+            if (crtTable.getPrimaryKeys().stream().map(primaryKey -> primaryKey.getPkAttribute().toLowerCase(Locale.ROOT)).toList().contains(columnNames.get(i).toLowerCase())) {
+                if (primaryKeys == null) {
                     primaryKeys = columnValues.get(i);
-                }else{
+                } else {
                     primaryKeys = primaryKeys + "#" + columnValues.get(i);
                 }
-            }else{
-                if (values == null){
+            } else {
+                if (values == null) {
                     values = columnValues.get(i);
-                }else{
+                } else {
                     values = values + "#" + columnValues.get(i);
                 }
             }
@@ -649,7 +650,7 @@ public class MainController {
             return true;
         }
 
-        try{
+        try {
             InsertOneResult result = collection.insertOne(new Document()
                     .append("_id", primaryKeys.toString())
                     .append("values", values));
@@ -661,18 +662,18 @@ public class MainController {
         return true;
     }
 
-    private boolean isPrimaryKeyValid(Table table, List <String> columnNames, String primaryKeyString , MongoCollection<Document> collection) {
+    private boolean isPrimaryKeyValid(Table table, List<String> columnNames, String primaryKeyString, MongoCollection<Document> collection) {
         // Validation logic to check if the primary key constraint is valid
         // If the primary key constraint is valid, return true; otherwise, return false
-        List <PrimaryKey> primaryKeys = table.getPrimaryKeys();
-        for (PrimaryKey primaryKey: primaryKeys) {
-            if ( !columnNames.stream().map(String::toLowerCase).toList().contains(primaryKey.getPkAttribute().toLowerCase()) ){
+        List<PrimaryKey> primaryKeys = table.getPrimaryKeys();
+        for (PrimaryKey primaryKey : primaryKeys) {
+            if (!columnNames.stream().map(String::toLowerCase).toList().contains(primaryKey.getPkAttribute().toLowerCase())) {
                 resultTextArea.setText("Invalid list of columns. List of columns must contains all primary key fields.");
                 return false;
             }
         }
         Document doc = collection.find(eq("_id", primaryKeyString)).first();
-        if (doc != null){
+        if (doc != null) {
             resultTextArea.setText("Primary key violation: A record with the same primary key already exists.");
             return false;
         }
@@ -713,8 +714,8 @@ public class MainController {
         }
 
         Table crtTable = new Table();
-        for (Table tb: tableList) {
-            if (tb.getTableName().equals(tableName)){
+        for (Table tb : tableList) {
+            if (tb.getTableName().equals(tableName)) {
                 crtTable = tb;
             }
         }

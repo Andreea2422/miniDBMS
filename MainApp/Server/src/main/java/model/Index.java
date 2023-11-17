@@ -17,6 +17,7 @@ public class Index implements Serializable {
     @XmlElement(name = "IAttribute")
     @XmlElementWrapper(name = "IndexAttributes")
     private List<String> columns;
+//    private boolean isUnique;
 
 
     public Index() {}
@@ -26,6 +27,7 @@ public class Index implements Serializable {
         this.tableName = tableName;
         this.columns = columns;
         this.fileName = indexName + ".ind";
+//        this.isUnique = isUnique;
     }
 
 
@@ -52,4 +54,12 @@ public class Index implements Serializable {
     public void setColumns(List<String> columns) {
         this.columns = columns;
     }
+
+//    public boolean isUnique() {
+//        return isUnique;
+//    }
+//
+//    public void setUnique(boolean unique) {
+//        isUnique = unique;
+//    }
 }

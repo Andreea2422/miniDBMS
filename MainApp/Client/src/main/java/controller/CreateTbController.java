@@ -17,9 +17,7 @@ import javafx.stage.Stage;
 import model.*;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 import static utils.Utils.saveDBMSToXML;
 
@@ -56,7 +54,7 @@ public class CreateTbController implements Initializable {
         this.mainTreeView = mainTreeView;
     }
 
-    public void setMongo(MongoClient mongo){
+    public void setMongo(MongoClient mongo) {
         this.mongoClient = mongo;
     }
 
@@ -147,7 +145,7 @@ public class CreateTbController implements Initializable {
         lastAddedButton = addNewColumnButton;
     }
 
-    public void addTable(ActionEvent actionEvent){
+    public void addTable(ActionEvent actionEvent) {
         List<Column> columns = new ArrayList<>();
         List<PrimaryKey> primaryKeys = new ArrayList<>();
         List<UniqueKey> uniqueKeys = new ArrayList<>();
@@ -166,9 +164,9 @@ public class CreateTbController implements Initializable {
             return;
         }
 
-        List<Table> tableList =  crtDatabase.getTables();
+        List<Table> tableList = crtDatabase.getTables();
         if (tableList.stream().map(table -> table.getTableName().toLowerCase()).toList().contains(tableName.toLowerCase())) {
-            resultTextArea.setText("Table name " + tableName +" already exist in " + crtDatabase.getDatabaseName() +" database. Try again!");
+            resultTextArea.setText("Table name " + tableName + " already exist in " + crtDatabase.getDatabaseName() + " database. Try again!");
             return;
         }
 
@@ -186,6 +184,17 @@ public class CreateTbController implements Initializable {
 
                 String columnNameValue = columnName.getText();
                 String dataTypeValue = dataType.getValue();
+
+                Integer length = null;
+                if (dataTypeValue.contains("(")) {
+                    length = Integer.parseInt(dataTypeValue.split("\\(")[1].replaceAll("\\)", ""));
+                    dataTypeValue = dataTypeValue.split("\\(")[0];
+                }
+
+                if (!ValidateDataType(dataTypeValue)) {
+                    resultTextArea.setText("Invalid dataType: " + dataTypeValue);
+                    return;
+                }
                 boolean isPrimaryKey = primaryKeyCheckbox.isSelected();
                 boolean isUniqueKey = uniqueKeyCheckbox.isSelected();
                 String isnull;
@@ -193,7 +202,15 @@ public class CreateTbController implements Initializable {
                     isnull = "0";
                 } else isnull = "1";
 
-                Column newColumn = new Column(columnNameValue, dataTypeValue, isPrimaryKey, isnull);
+                Column newColumn = new Column();
+                newColumn.setColumnName(columnNameValue);
+                newColumn.setType(dataTypeValue);
+                if (length != null) {
+                    newColumn.setLength(length);
+                }
+                newColumn.setPrimaryKey(isPrimaryKey);
+                newColumn.setNull(isnull);
+
                 columns.add(newColumn);
 
                 if (isPrimaryKey) {
@@ -239,6 +256,18 @@ public class CreateTbController implements Initializable {
 
         // Close the dialog
         ((Stage) tbNameField.getScene().getWindow()).close();
+    }
+
+    public boolean ValidateDataType(String attributeType){
+        List<String> dataTypes = Arrays.asList(
+                "bigint", "char", "datetime", "date",
+                "float", "int", "nvarchar", "real",
+                "smalldatetime", "smallint", "text", "timestamp",
+                "tinyint", "varchar", "varbinary", "xml");
+        if (dataTypes.contains(attributeType.toLowerCase(Locale.ROOT))){
+            return true;
+        }
+        return false;
     }
 
 }

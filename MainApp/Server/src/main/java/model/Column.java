@@ -5,12 +5,14 @@ import java.io.Serializable;
 
 @XmlAccessorType(XmlAccessType.FIELD )
 @XmlRootElement(name = "column")
-@XmlType(propOrder = { "columnName", "type", "isPrimaryKey", "isnull" })
+@XmlType(propOrder = { "columnName", "type", "length", "isPrimaryKey", "isnull" })
 public class Column implements Serializable {
     @XmlAttribute
     private String columnName;
     @XmlAttribute
     private String type;
+    @XmlAttribute
+    private Integer length;
     private boolean isPrimaryKey;
     @XmlAttribute
     private String isnull;
@@ -39,6 +41,13 @@ public class Column implements Serializable {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public Integer getLength() {
+        return length;
+    }
+    public void setLength(Integer length) {
+        this.length = length;
     }
 
     public String getNull() {
