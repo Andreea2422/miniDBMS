@@ -691,7 +691,7 @@ public class MainController {
 
         // Check if the provided SQL command matches the expected pattern
         if (!matcher.matches()) {
-            resultTextArea.setText("Invalid SQL command. Please provide a valid INSERT INTO statement.");
+            resultTextArea.setText("Invalid SQL command. Please provide a valid DELETE statement.");
             return false;
         }
 
