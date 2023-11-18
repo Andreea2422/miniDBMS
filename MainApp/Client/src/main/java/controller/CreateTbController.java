@@ -219,7 +219,7 @@ public class CreateTbController implements Initializable {
                     List<String> columnsName = new ArrayList<>();
                     columnsName.add(columnNameValue);
                     String pk_index_name = "PK_" + columnNameValue;
-                    Index pk_index = new Index(pk_index_name, tableName, columnsName);
+                    Index pk_index = new Index(pk_index_name, tableName, columnsName, true);
                     indexes.add(pk_index);
                 }
 

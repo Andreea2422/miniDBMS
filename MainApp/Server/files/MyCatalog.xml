@@ -25,8 +25,14 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table1">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table1" isUnique="true">
                         <IndexAttributes>
+                            <IAttribute>id</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                    <IndexFile indexName="name_id_index" fileName="name_id_index.ind" tableName="Table1" isUnique="false">
+                        <IndexAttributes>
+                            <IAttribute>name</IAttribute>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
@@ -52,7 +58,7 @@
                 <uniqueKeys/>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table2">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table2" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -79,7 +85,7 @@
                 <uniqueKeys/>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table3">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table3" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -104,7 +110,7 @@
                 </uniqueKeys>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="t4">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="t4" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -141,7 +147,7 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="PK_IDTren" fileName="PK_IDTren.ind" tableName="Trenuri">
+                    <IndexFile indexName="PK_IDTren" fileName="PK_IDTren.ind" tableName="Trenuri" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>IDTren</IAttribute>
                         </IndexAttributes>
@@ -165,7 +171,7 @@
                 <uniqueKeys/>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_IDTip" fileName="PK_IDTip.ind" tableName="Tipuri">
+                    <IndexFile indexName="PK_IDTip" fileName="PK_IDTip.ind" tableName="Tipuri" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>IDTip</IAttribute>
                         </IndexAttributes>
@@ -200,7 +206,7 @@
                 </uniqueKeys>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="table1">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="table1" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -244,7 +250,7 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Produse">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Produse" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -268,7 +274,7 @@
                 <uniqueKeys/>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Tipuri">
+                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Tipuri" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
                         </IndexAttributes>
@@ -300,7 +306,7 @@
                 </uniqueKeys>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_saa" fileName="PK_saa.ind" tableName="tb1">
+                    <IndexFile indexName="PK_saa" fileName="PK_saa.ind" tableName="tb1" isUnique="true">
                         <IndexAttributes>
                             <IAttribute>saa</IAttribute>
                         </IndexAttributes>

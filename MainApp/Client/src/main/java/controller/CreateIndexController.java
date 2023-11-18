@@ -1,5 +1,7 @@
 package controller;
 
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoDatabase;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -34,6 +36,8 @@ public class CreateIndexController {
     private Button addColumnButton;
     @FXML
     private ScrollPane columnDetailsScrollPane;
+    @FXML
+    private CheckBox uniqueIndexCheckbox;
 
     private TreeView<String> mainTreeView;
     private Databases myDBMS;
@@ -41,6 +45,7 @@ public class CreateIndexController {
     private TextArea resultTextArea;
     private Button lastAddedButton;
     private String tbName;
+    private MongoClient mongoClient;
 
     public void setAttr(TreeView<String> mainTreeView, Databases myDBMS, DataBase crtDatabase, String tbName, TextArea resultTextArea) {
         this.mainTreeView = mainTreeView;
@@ -49,6 +54,9 @@ public class CreateIndexController {
         this.tbName = tbName;
         this.resultTextArea = resultTextArea;
         init();
+    }
+    public void setMongo(MongoClient mongo) {
+        this.mongoClient = mongo;
     }
 
     private ObservableList<String> columnsBoxItems;
@@ -115,11 +123,12 @@ public class CreateIndexController {
         List<Table> tables = crtDatabase.getTables();
 
         String indexName = indexNameField.getText();
-
         if (indexName.isEmpty()) {
             resultTextArea.setText("Please input index name");
             return;
         }
+
+        boolean isUnique = uniqueIndexCheckbox.isSelected();
 
         // Access the column details
         for (Node node : columnDetailsVBox.getChildren()) {
@@ -147,12 +156,18 @@ public class CreateIndexController {
             }
         }
 
-        Index index = new Index(indexName, tbName, indexColumns);
+        Index index = new Index(indexName, tbName, indexColumns, isUnique);
         for (Table tb: tables) {
             if (tb.getTableName().equals(tbName)){
                 tb.createIndex(index);
             }
         }
+
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        //Creating a collection
+        database.createCollection(indexName + "_" + tbName + "_index");
+
         saveDBMSToXML(myDBMS);
         resultTextArea.setText("Index " + indexName + " created successfully!");
 

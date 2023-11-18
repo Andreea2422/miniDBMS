@@ -28,7 +28,7 @@ public class DataBase implements Serializable {
 
     public void dropTable(String tableName) {
         Table tableToRemove = null;
-        for (Table table : tables) {
+        for (Table table : this.tables) {
             if (table.getTableName().equalsIgnoreCase(tableName)) {
                 tableToRemove = table;
                 break;
@@ -39,9 +39,14 @@ public class DataBase implements Serializable {
         }
     }
 
-//    public List<Table> listTables() {
-//        return tables;
-//    }
+    public Table getTableByName(String tableName) {
+        for (Table table : this.tables) {
+            if (table.getTableName().equalsIgnoreCase(tableName)) {
+                return table;
+            }
+        }
+        return null;
+    }
 
     public String getDatabaseName() {
         return databaseName;

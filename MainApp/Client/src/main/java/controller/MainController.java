@@ -19,6 +19,7 @@ import org.bson.Document;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -52,6 +53,7 @@ public class MainController {
 
     private Databases myDBMS;
     private DataBase crtDatabase;
+    private Table controllerTable;
     private MongoClient mongoClient;
 
     public void setDatabases(Databases myDBMS) {
@@ -316,6 +318,7 @@ public class MainController {
 
         String dbName = selectedItem.getParent().getParent().getValue();
         crtDatabase = myDBMS.getDatabaseByName(dbName);
+        controllerTable = crtDatabase.getTableByName(tableName);
 
         List<Table> tableList = crtDatabase.getTables();
         for (Table table : tableList) {
@@ -336,9 +339,14 @@ public class MainController {
         MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
         // drop table
         database.getCollection(tableName).drop();
+        // drop index
+        for (Index index: controllerTable.getIndexes()) {
+            database.getCollection(index.getIndexName()).drop();
+        }
 
         resultTextArea.setText("Table " + tableName + " was dropped!");
         crtDatabase = null;
+        controllerTable = null;
     }
 
     private void addNewIndex(ActionEvent event) {
@@ -362,6 +370,7 @@ public class MainController {
             // Set the controller for the dialog
             CreateIndexController controller = loader.getController();
             controller.setAttr(mainTreeView, myDBMS, crtDatabase, tbName, resultTextArea);
+            controller.setMongo(mongoClient);
 
             dialogStage.show();
         } catch (IOException e) {
@@ -377,22 +386,22 @@ public class MainController {
 
         String dbName = selectedItem.getParent().getParent().getParent().getParent().getValue();
         crtDatabase = myDBMS.getDatabaseByName(dbName);
+        controllerTable = crtDatabase.getTableByName(tableName);
 
-        List<Table> tableList = crtDatabase.getTables();
-        for (Table tb : tableList) {
-            if (tb.getTableName().equals(tableName)) {
-                List<Index> indices = tb.getIndexes();
-                for (Index ix : indices) {
-                    if (ix.getIndexName().equals(indexName)) {
-                        tb.dropIndex(ix);
-                    }
-                }
-            }
-        }
+        List<Index> indices = controllerTable.getIndexes();
+        indices.removeIf(index -> index.getIndexName().equals(indexName));
 
         saveDBMSToXML(myDBMS);
         resultTextArea.setText("Index " + indexName + " was dropped!");
+
+        String mongoIndex = indexName + "_" + tableName + "_index";
+        //Connecting to the database
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+        // drop index (collection)
+        database.getCollection(mongoIndex).drop();
+
         crtDatabase = null;
+        controllerTable = null;
     }
 
     private void addFK(ActionEvent event) {

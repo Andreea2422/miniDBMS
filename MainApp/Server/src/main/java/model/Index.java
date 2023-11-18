@@ -6,7 +6,7 @@ import java.util.List;
 
 @XmlAccessorType(XmlAccessType.FIELD )
 @XmlRootElement(name = "IndexFiles")
-@XmlType(propOrder = { "indexName", "fileName", "tableName", "columns" })
+@XmlType(propOrder = { "indexName", "fileName", "tableName", "columns", "isUnique" })
 public class Index implements Serializable {
     @XmlAttribute
     private String indexName;
@@ -17,17 +17,18 @@ public class Index implements Serializable {
     @XmlElement(name = "IAttribute")
     @XmlElementWrapper(name = "IndexAttributes")
     private List<String> columns;
-//    private boolean isUnique;
+    @XmlAttribute
+    private boolean isUnique;
 
 
     public Index() {}
 
-    public Index(String indexName, String tableName, List<String> columns) {
+    public Index(String indexName, String tableName, List<String> columns, boolean isUnique) {
         this.indexName = indexName;
         this.tableName = tableName;
         this.columns = columns;
         this.fileName = indexName + ".ind";
-//        this.isUnique = isUnique;
+        this.isUnique = isUnique;
     }
 
 
@@ -55,11 +56,11 @@ public class Index implements Serializable {
         this.columns = columns;
     }
 
-//    public boolean isUnique() {
-//        return isUnique;
-//    }
-//
-//    public void setUnique(boolean unique) {
-//        isUnique = unique;
-//    }
+    public boolean isUnique() {
+        return isUnique;
+    }
+
+    public void setUnique(boolean unique) {
+        isUnique = unique;
+    }
 }
