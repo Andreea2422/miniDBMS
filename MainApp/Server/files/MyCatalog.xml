@@ -4,10 +4,10 @@
         <tables>
             <table tableName="Table1" fileName="Table1.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="name" type="varchar" length="50" isnull="0">
+                    <attribute columnName="name" type="varchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -25,11 +25,6 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table1" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
                     <IndexFile indexName="name_id_index" fileName="name_id_index.ind" tableName="Table1" isUnique="false">
                         <IndexAttributes>
                             <IAttribute>name</IAttribute>
@@ -40,13 +35,13 @@
             </table>
             <table tableName="Table2" fileName="Table2.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="price" type="float" isnull="0">
+                    <attribute columnName="price" type="float" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="adress" type="varchar" length="50" isnull="0">
+                    <attribute columnName="adress" type="varchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -57,23 +52,17 @@
                 </primaryKey>
                 <uniqueKeys/>
                 <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table2" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
             <table tableName="Table3" fileName="Table3.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="c1" type="float" isnull="1">
+                    <attribute columnName="c1" type="float" isnull="true">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="c2" type="varchar" length="50" isnull="1">
+                    <attribute columnName="c2" type="varchar" length="50" isnull="true">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -84,17 +73,11 @@
                 </primaryKey>
                 <uniqueKeys/>
                 <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Table3" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
             <table tableName="t4" fileName="t4.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -109,13 +92,7 @@
                     </UniqueAttribute>
                 </uniqueKeys>
                 <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="t4" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
         </tables>
     </database>
@@ -123,13 +100,13 @@
         <tables>
             <table tableName="Trenuri" fileName="Trenuri.bin">
                 <structure>
-                    <attribute columnName="IDTren" type="int" isnull="0">
+                    <attribute columnName="IDTren" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="Nume" type="nvarchar" length="50" isnull="0">
+                    <attribute columnName="Nume" type="nvarchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="Tip" type="int" isnull="0">
+                    <attribute columnName="Tip" type="int" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -146,20 +123,14 @@
                         <refTable>Tipuri</refTable>
                     </foreignKey>
                 </foreignKeys>
-                <IndexFiles>
-                    <IndexFile indexName="PK_IDTren" fileName="PK_IDTren.ind" tableName="Trenuri" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>IDTren</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
             <table tableName="Tipuri" fileName="Tipuri.bin">
                 <structure>
-                    <attribute columnName="IDTip" type="int" isnull="0">
+                    <attribute columnName="IDTip" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="Descriere" type="nvarchar" length="50" isnull="0">
+                    <attribute columnName="Descriere" type="nvarchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -170,48 +141,7 @@
                 </primaryKey>
                 <uniqueKeys/>
                 <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_IDTip" fileName="PK_IDTip.ind" tableName="Tipuri" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>IDTip</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
-            </table>
-        </tables>
-    </database>
-    <database databaseName="testingAgain">
-        <tables>
-            <table tableName="table1" fileName="table1.bin">
-                <structure>
-                    <attribute columnName="id" type="int" isnull="0">
-                        <isPrimaryKey>true</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="col1" type="nvarchar" length="50" isnull="0">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="col2" type="float" isnull="1">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                </structure>
-                <primaryKey>
-                    <pkAttribute>
-                        <pkAttribute>id</pkAttribute>
-                    </pkAttribute>
-                </primaryKey>
-                <uniqueKeys>
-                    <UniqueAttribute>
-                        <ukAttribute>id</ukAttribute>
-                    </UniqueAttribute>
-                </uniqueKeys>
-                <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="table1" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
         </tables>
     </database>
@@ -219,16 +149,16 @@
         <tables>
             <table tableName="Produse" fileName="Produse.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="nume" type="nvarchar" length="50" isnull="0">
+                    <attribute columnName="nume" type="nvarchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="tip" type="int" isnull="0">
+                    <attribute columnName="tip" type="int" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="price" type="float" isnull="1">
+                    <attribute columnName="price" type="float" isnull="true">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -250,19 +180,20 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Produse" isUnique="true">
+                    <IndexFile indexName="id_nume" fileName="id_nume.ind" tableName="Produse" isUnique="false">
                         <IndexAttributes>
                             <IAttribute>id</IAttribute>
+                            <IAttribute>nume</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
                 </IndexFiles>
             </table>
             <table tableName="Tipuri" fileName="Tipuri.bin">
                 <structure>
-                    <attribute columnName="id" type="int" isnull="0">
+                    <attribute columnName="id" type="int" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="denumire" type="nvarchar" length="50" isnull="0">
+                    <attribute columnName="denumire" type="nvarchar" length="50" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
@@ -273,42 +204,52 @@
                 </primaryKey>
                 <uniqueKeys/>
                 <foreignKeys/>
-                <IndexFiles>
-                    <IndexFile indexName="PK_id" fileName="PK_id.ind" tableName="Tipuri" isUnique="true">
-                        <IndexAttributes>
-                            <IAttribute>id</IAttribute>
-                        </IndexAttributes>
-                    </IndexFile>
-                </IndexFiles>
+                <IndexFiles/>
             </table>
         </tables>
     </database>
-    <database databaseName="sasas">
+    <database databaseName="CheieCompusaDB">
         <tables>
-            <table tableName="tb1" fileName="tb1.bin">
+            <table tableName="Grades" fileName="Grades.bin">
                 <structure>
-                    <attribute columnName="saa" type="int" isnull="1">
+                    <attribute columnName="Date" type="date" isnull="false">
                         <isPrimaryKey>true</isPrimaryKey>
                     </attribute>
-                    <attribute columnName="sddada" type="nvarchar" length="50" isnull="1">
+                    <attribute columnName="IDstud" type="int" isnull="false">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="IDdisc" type="nvarchar" length="50" isnull="false">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="grade" type="int" isnull="false">
                         <isPrimaryKey>false</isPrimaryKey>
                     </attribute>
                 </structure>
                 <primaryKey>
                     <pkAttribute>
-                        <pkAttribute>saa</pkAttribute>
+                        <pkAttribute>Date</pkAttribute>
+                    </pkAttribute>
+                    <pkAttribute>
+                        <pkAttribute>IDstud</pkAttribute>
+                    </pkAttribute>
+                    <pkAttribute>
+                        <pkAttribute>IDdisc</pkAttribute>
                     </pkAttribute>
                 </primaryKey>
                 <uniqueKeys>
                     <UniqueAttribute>
-                        <ukAttribute>saa</ukAttribute>
+                        <ukAttribute>IDstud</ukAttribute>
+                    </UniqueAttribute>
+                    <UniqueAttribute>
+                        <ukAttribute>IDdisc</ukAttribute>
                     </UniqueAttribute>
                 </uniqueKeys>
                 <foreignKeys/>
                 <IndexFiles>
-                    <IndexFile indexName="PK_saa" fileName="PK_saa.ind" tableName="tb1" isUnique="true">
+                    <IndexFile indexName="stud_disc" fileName="stud_disc.ind" tableName="Grades" isUnique="false">
                         <IndexAttributes>
-                            <IAttribute>saa</IAttribute>
+                            <IAttribute>IDstud</IAttribute>
+                            <IAttribute>IDdisc</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
                 </IndexFiles>

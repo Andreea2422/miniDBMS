@@ -186,21 +186,26 @@ public class CreateTbController implements Initializable {
                 String dataTypeValue = dataType.getValue();
 
                 Integer length = null;
-                if (dataTypeValue.contains("(")) {
-                    length = Integer.parseInt(dataTypeValue.split("\\(")[1].replaceAll("\\)", ""));
-                    dataTypeValue = dataTypeValue.split("\\(")[0];
+                if (dataTypeValue != null) {
+                    if (dataTypeValue.contains("(")) {
+                        length = Integer.parseInt(dataTypeValue.split("\\(")[1].replaceAll("\\)", ""));
+                        dataTypeValue = dataTypeValue.split("\\(")[0];
+                    }
+                } else {
+                    resultTextArea.setText("Please select a data type for column " + columnNameValue);
+                    return;
                 }
-
                 if (!ValidateDataType(dataTypeValue)) {
                     resultTextArea.setText("Invalid dataType: " + dataTypeValue);
                     return;
                 }
+
                 boolean isPrimaryKey = primaryKeyCheckbox.isSelected();
                 boolean isUniqueKey = uniqueKeyCheckbox.isSelected();
-                String isnull;
+                boolean isnull;
                 if (notnullCheckbox.isSelected()) {
-                    isnull = "0";
-                } else isnull = "1";
+                    isnull = false;
+                } else isnull = true;
 
                 Column newColumn = new Column();
                 newColumn.setColumnName(columnNameValue);
@@ -218,9 +223,9 @@ public class CreateTbController implements Initializable {
                     primaryKeys.add(newPrimaryKey);
                     List<String> columnsName = new ArrayList<>();
                     columnsName.add(columnNameValue);
-                    String pk_index_name = "PK_" + columnNameValue;
-                    Index pk_index = new Index(pk_index_name, tableName, columnsName, true);
-                    indexes.add(pk_index);
+//                    String pk_index_name = "PK_" + columnNameValue;
+//                    Index pk_index = new Index(pk_index_name, tableName, columnsName, true);
+//                    indexes.add(pk_index);
                 }
 
                 if (isUniqueKey) {
@@ -233,15 +238,12 @@ public class CreateTbController implements Initializable {
                 if (columnNameValue.isEmpty()) {
                     resultTextArea.setText("Invalid column name");
                     return;
-                } else if (dataTypeValue == null) {
-                    resultTextArea.setText("Please select a data type for column " + columnNameValue);
-                    return;
                 }
             }
         }
 
         Table table = new Table(tableName, columns, primaryKeys, uniqueKeys, foreignKeys);
-        table.setIndexes(indexes);
+//        table.setIndexes(indexes);
         crtDatabase.createTable(table);
         saveDBMSToXML(myDBMS);
 

@@ -15,12 +15,12 @@ public class Column implements Serializable {
     private Integer length;
     private boolean isPrimaryKey;
     @XmlAttribute
-    private String isnull;
+    private boolean isnull;
 
     public Column() {
     }
 
-    public Column(String name, String type, boolean isPrimaryKey, String isnull) {
+    public Column(String name, String type, boolean isPrimaryKey, boolean isnull) {
         this.columnName = name;
         this.type = type;
         this.isPrimaryKey = isPrimaryKey;
@@ -50,11 +50,11 @@ public class Column implements Serializable {
         this.length = length;
     }
 
-    public String getNull() {
+    public boolean getNull() {
         return isnull;
     }
 
-    public void setNull(String isnull) {
+    public void setNull(boolean isnull) {
         this.isnull = isnull;
     }
 

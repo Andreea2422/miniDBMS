@@ -6,6 +6,8 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.InsertOneResult;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -16,6 +18,7 @@ import javafx.scene.input.ContextMenuEvent;
 import javafx.stage.Stage;
 import model.*;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -90,17 +93,12 @@ public class MainController {
                 for (Column cl : columnList) {
                     String key;
                     String value;
-                    String keys_value;
 
                     if (cl.isPrimaryKey()) {
                         key = "PK";
                         if (cl.getLength() != null) {
                             value = cl.getColumnName() + " (" + key + ", " + cl.getType() + "(" + cl.getLength() + ")" + ")";
                         } else value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
-
-                        keys_value = "PK_" + tb.getTableName();
-                        TreeItem<String> keyItem = new TreeItem<>(keys_value);
-                        keys.getChildren().add(keyItem);
                     } else if (tb.getForeignKeys().stream().map(fk ->
                             fk.getFkAttribute().toLowerCase()).toList().contains(cl.getColumnName().toLowerCase())) {
                         key = "FK";
@@ -115,10 +113,16 @@ public class MainController {
                     columns.getChildren().add(clItem);
                 }
 
+                String keys_value;
+                List<PrimaryKey> pkList = tb.getPrimaryKeys();
+                if(!pkList.isEmpty()) {
+                    keys_value = "PK_" + tb.getTableName();
+                    TreeItem<String> keyItem = new TreeItem<>(keys_value);
+                    keys.getChildren().add(keyItem);
+                }
+
                 List<ForeignKey> fkList = tb.getForeignKeys();
                 for (ForeignKey fk : fkList) {
-                    String keys_value;
-
                     keys_value = "FK_" + tb.getTableName() + "_" + fk.getRefTable();
                     TreeItem<String> keyItem = new TreeItem<>(keys_value);
                     keys.getChildren().add(keyItem);
@@ -658,11 +662,20 @@ public class MainController {
         if (!isPrimaryKeyValid(crtTable, columnNames, primaryKeys, collection)) {
             return true;
         }
+        if (!checkFKonInsert(crtTable, columnNames, columnValues, database)) {
+            return true;
+        }
+        // insert indexes
+        if (!insertInIndexes(crtTable, columnNames, columnValues, primaryKeys, database)) {
+            return true;
+        }
 
         try {
-            InsertOneResult result = collection.insertOne(new Document()
-                    .append("_id", primaryKeys.toString())
-                    .append("values", values));
+//            InsertOneResult result = collection.insertOne(new Document()
+//                    .append("_id", primaryKeys.toString())
+//                    .append("values", values));
+            collection.insertOne(new Document().append("_id", primaryKeys).append("values", values));
+
         } catch (MongoException me) {
             resultTextArea.setText("Unable to insert due to an error: " + me);
         }
@@ -677,7 +690,7 @@ public class MainController {
         List<PrimaryKey> primaryKeys = table.getPrimaryKeys();
         for (PrimaryKey primaryKey : primaryKeys) {
             if (!columnNames.stream().map(String::toLowerCase).toList().contains(primaryKey.getPkAttribute().toLowerCase())) {
-                resultTextArea.setText("Invalid list of columns. List of columns must contains all primary key fields.");
+                resultTextArea.setText("Invalid list of columns. List of columns must contain all primary key fields.");
                 return false;
             }
         }
@@ -687,6 +700,73 @@ public class MainController {
             return false;
         }
 
+        return true;
+    }
+
+    private boolean checkFKonInsert(Table crtTable, List<String> columnNames, List<String> columnValues, MongoDatabase database) {
+        if (crtTable.getForeignKeys().size() == 0) {
+            return true;
+        }
+
+        for(ForeignKey foreignKey : crtTable.getForeignKeys()) {
+            for (int i = 0; i < columnNames.size(); i++) {
+                if (columnNames.get(i).equalsIgnoreCase(foreignKey.getFkAttribute())) {
+                    Table refTable = crtDatabase.getTableByName(foreignKey.getRefTable());
+                    MongoCollection<Document> collection = database.getCollection(refTable.getTableName());
+                    Document doc = collection.find(eq("_id", columnValues.get(i))).first();
+                    if (doc != null) {
+                        return true;
+                    }
+                    for (Index index : refTable.getIndexes()) {
+                        collection = database.getCollection(index.getIndexName());
+                        doc = collection.find(eq("_id", columnValues.get(i))).first();
+                        if (doc != null) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        resultTextArea.setText("Foreign Key constraint failure.");
+        return false;
+    }
+
+    private boolean insertInIndexes(Table crtTable, List<String> columnNames, List<String> columnValues, String primaryKeyString, MongoDatabase database) {
+        for (Index index : crtTable.getIndexes()) {
+            String indexID = null;
+            for (String column : index.getColumns()) {
+                for (int i = 0; i < columnNames.size(); i++) {
+                    if (columnNames.get(i).equalsIgnoreCase(column)) {
+                        if (indexID != null) {
+                            indexID = indexID + "$" + columnValues.get(i);
+                        } else {
+                            indexID = columnValues.get(i);
+                        }
+                    }
+                }
+            }
+
+            String mongoIndex = index.getIndexName() + "_" + crtTable.getTableName() + "_index";
+            MongoCollection<Document> collection = database.getCollection(mongoIndex);
+            Document doc = collection.find(eq("_id", indexID)).first();
+            if (doc != null) {
+                if (index.isUnique()) {
+                    resultTextArea.setText("Unique key violation: A record with the same value already exists.");
+                    return false;
+                }
+                String doc_values = (String) doc.get("values");
+                String values = doc_values.replace("#", "$");
+                String pkstring_index = primaryKeyString.replace("#", "$");
+                Bson updates = Updates.combine(Updates.set("values", values + "#" + pkstring_index));
+                UpdateOptions options = new UpdateOptions().upsert(true);
+                collection.updateOne(doc, updates, options);
+            } else {
+                collection.insertOne(new Document()
+                        .append("_id", indexID)
+                        .append("values", primaryKeyString));
+            }
+        }
         return true;
     }
 
@@ -738,11 +818,61 @@ public class MainController {
         MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
         //Creating a collection
         MongoCollection<Document> collection = database.getCollection(tableName);
+
+        if(!checkFKonDelete(crtTable, columnPK, columnValue, database)) {
+            return true;
+        }
+        deleteFromIndexes(crtTable, columnPK, columnValue, database);
+
         //Deleting a document
         collection.deleteOne(Filters.eq("_id", columnValue));
 
         resultTextArea.setText("Data was successfully deleted from the table " + tableName);
         return true;
     }
+
+    private void deleteFromIndexes(Table crtTable, String columnName, String columnValue, MongoDatabase database) {
+        for (Index index : crtTable.getIndexes()) {
+            String mongoIndex = index.getIndexName() + "_" + crtTable.getTableName() + "_index";
+            MongoCollection<Document> collection = database.getCollection(mongoIndex);
+            Document doc = collection.find(eq("values", columnValue)).first();
+            if (doc != null) {
+                collection.deleteOne(Filters.eq("values", columnValue));
+//                return;
+            }
+        }
+    }
+
+    private boolean checkFKonDelete(Table crtTable, String columnName, String columnValue, MongoDatabase database) {
+        for (Table table : crtDatabase.getTables()) {
+            for (ForeignKey foreignKey : table.getForeignKeys()) {
+                if (foreignKey.getRefTable().equalsIgnoreCase(crtTable.getTableName())) {
+                    if (foreignKey.getRefAttribute().equalsIgnoreCase(columnName)) {
+                        MongoCollection<Document> collection = database.getCollection(foreignKey.getRefTable());
+                        Document doc = collection.find(eq("_id", columnValue)).first();
+                        if (doc != null) {
+                            resultTextArea.setText("Foreign Key constraint failure.");
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+//    private boolean checkFKonDeleteTable(Table crtTable, MongoDatabase database) {
+//        for (Table table : crtDatabase.getTables()) {
+//            for (ForeignKey foreignKey : table.getForeignKeys()) {
+//                if (foreignKey.getRefTable().equalsIgnoreCase(crtTable.getTableName())) {
+//                    resultTextArea.setText("Foreign Key constraint failure.");
+//                    return false;
+//                }
+//            }
+//        }
+//
+//        return true;
+//    }
 
 }

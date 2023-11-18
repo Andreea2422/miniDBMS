@@ -163,15 +163,14 @@ public class CreateIndexController {
             }
         }
 
+        saveDBMSToXML(myDBMS);
+
         //Connecting to the database
         MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
         //Creating a collection
         database.createCollection(indexName + "_" + tbName + "_index");
 
-        saveDBMSToXML(myDBMS);
         resultTextArea.setText("Index " + indexName + " created successfully!");
-
-        // Close the dialog
         ((Stage) indexNameField.getScene().getWindow()).close();
     }
 }
