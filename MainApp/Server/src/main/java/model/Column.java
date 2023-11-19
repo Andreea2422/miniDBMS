@@ -50,7 +50,7 @@ public class Column implements Serializable {
         this.length = length;
     }
 
-    public boolean getNull() {
+    public boolean isNull() {
         return isnull;
     }
 

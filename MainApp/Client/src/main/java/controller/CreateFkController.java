@@ -81,7 +81,8 @@ public class CreateFkController {
                 List<Column> columns = tb.getColumns();
 
                 for (Column cl: columns) {
-                    columnComboBoxItems.add(cl.getColumnName());
+                    if (cl.isPrimaryKey())
+                        columnComboBoxItems.add(cl.getColumnName());
                 }
             }
         }

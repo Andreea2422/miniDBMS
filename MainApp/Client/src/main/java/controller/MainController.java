@@ -639,27 +639,55 @@ public class MainController {
         String primaryKeys = null;
         String values = null;
 
-        for (int i = 0; i < columnNames.size(); i++) {
-            if (crtTable.getPrimaryKeys().stream().map(primaryKey -> primaryKey.getPkAttribute().toLowerCase(Locale.ROOT)).toList().contains(columnNames.get(i).toLowerCase())) {
-                if (primaryKeys == null) {
-                    primaryKeys = columnValues.get(i);
-                } else {
-                    primaryKeys = primaryKeys + "#" + columnValues.get(i);
-                }
-            } else {
-                if (values == null) {
-                    values = columnValues.get(i);
-                } else {
-                    values = values + "#" + columnValues.get(i);
-                }
-            }
-        }
-
         //Connecting to the database
         MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
         MongoCollection<Document> collection = database.getCollection(tableName);
 
         if (!isPrimaryKeyValid(crtTable, columnNames, primaryKeys, collection)) {
+            return true;
+        }
+
+        for (int i = 0; i < columnNames.size(); i++) {
+            if (crtTable.getPrimaryKeys().stream().map(primaryKey -> primaryKey.getPkAttribute().toLowerCase(Locale.ROOT)).toList()
+                    .contains(columnNames.get(i).toLowerCase())) {
+                if (primaryKeys == null) {
+                    primaryKeys = columnValues.get(i);
+                } else {
+                    primaryKeys = primaryKeys + "#" + columnValues.get(i);
+                }
+            }
+        }
+
+        List<Column> columnList = crtTable.getColumns();
+        int i=0;
+        boolean hasNulls = false;
+        for (Column column : columnList) {
+            if (!column.isPrimaryKey()) {
+                if (!columnNames.stream().map(String::toLowerCase).toList()
+                        .contains(column.getColumnName().toLowerCase()) && column.isNull()) {
+                    //daca column nu este in columnNames si column permite nulls
+                    hasNulls = true;
+                    if (values == null) {
+                        values = "null";
+                    } else {
+                        values = values + "#" + "null";
+                    }
+                } else if (!columnNames.stream().map(String::toLowerCase).toList()
+                        .contains(column.getColumnName().toLowerCase()) && !column.isNull()) {
+                    hasNulls = false;
+                    break;
+                } else {
+                    if (values == null) {
+                        values = columnValues.get(i);
+                    } else {
+                        values = values + "#" + columnValues.get(i);
+                    }
+                }
+            }
+            i++;
+        }
+
+        if (!isFieldValid(crtTable, columnNames, columnValues, hasNulls)){
             return true;
         }
         if (!checkFKonInsert(crtTable, columnNames, columnValues, database)) {
@@ -671,9 +699,6 @@ public class MainController {
         }
 
         try {
-//            InsertOneResult result = collection.insertOne(new Document()
-//                    .append("_id", primaryKeys.toString())
-//                    .append("values", values));
             collection.insertOne(new Document().append("_id", primaryKeys).append("values", values));
 
         } catch (MongoException me) {
@@ -703,8 +728,20 @@ public class MainController {
         return true;
     }
 
+    private boolean isFieldValid(Table table, List<String> columnNames, List<String> columnValues, boolean hasNulls) {
+        // Validation logic to check if the fields are valid and if they allow nulls
+        // If the fields are valid, return true; otherwise, return false
+        List<Column> columnList = table.getColumns();
+        if ((columnList.size()!=columnNames.size() || columnValues.size()!=columnNames.size()) && !hasNulls){
+            resultTextArea.setText("Invalid list of columns. List of columns must contain all fields.");
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private boolean checkFKonInsert(Table crtTable, List<String> columnNames, List<String> columnValues, MongoDatabase database) {
-        if (crtTable.getForeignKeys().size() == 0) {
+        if (crtTable.getForeignKeys().isEmpty()) {
             return true;
         }
 
@@ -755,10 +792,12 @@ public class MainController {
                     resultTextArea.setText("Unique key violation: A record with the same value already exists.");
                     return false;
                 }
-                String doc_values = (String) doc.get("values");
-                String values = doc_values.replace("#", "$");
+                String doc_values = doc.getString("values");
+                if (!doc_values.contains("$")){
+                    doc_values = doc_values.replace("#", "$");
+                }
                 String pkstring_index = primaryKeyString.replace("#", "$");
-                Bson updates = Updates.combine(Updates.set("values", values + "#" + pkstring_index));
+                Bson updates = Updates.combine(Updates.set("values", doc_values + "#" + pkstring_index));
                 UpdateOptions options = new UpdateOptions().upsert(true);
                 collection.updateOne(doc, updates, options);
             } else {
@@ -839,6 +878,19 @@ public class MainController {
             if (doc != null) {
                 collection.deleteOne(Filters.eq("values", columnValue));
 //                return;
+            } else {
+                String patternStr = "#" + columnValue;
+                Pattern pattern = Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
+                Bson filter = Filters.regex("values", pattern);
+                Document nonuniqueDoc = collection.find(filter).first();
+                if (nonuniqueDoc != null){
+                    // Update the document to remove "#columnValue" from the "values" field
+                    // Retrieve the existing values from the document and replace "#3" from it
+                    String existingValue = nonuniqueDoc.getString("values");
+                    String updatedValue = existingValue.replace("#" + columnValue, "");
+
+                    collection.updateOne(filter, Updates.set("values", updatedValue));
+                }
             }
         }
     }
@@ -861,18 +913,5 @@ public class MainController {
 
         return true;
     }
-
-//    private boolean checkFKonDeleteTable(Table crtTable, MongoDatabase database) {
-//        for (Table table : crtDatabase.getTables()) {
-//            for (ForeignKey foreignKey : table.getForeignKeys()) {
-//                if (foreignKey.getRefTable().equalsIgnoreCase(crtTable.getTableName())) {
-//                    resultTextArea.setText("Foreign Key constraint failure.");
-//                    return false;
-//                }
-//            }
-//        }
-//
-//        return true;
-//    }
 
 }

@@ -96,55 +96,6 @@
             </table>
         </tables>
     </database>
-    <database databaseName="CFR">
-        <tables>
-            <table tableName="Trenuri" fileName="Trenuri.bin">
-                <structure>
-                    <attribute columnName="IDTren" type="int" isnull="false">
-                        <isPrimaryKey>true</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="Nume" type="nvarchar" length="50" isnull="false">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="Tip" type="int" isnull="false">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                </structure>
-                <primaryKey>
-                    <pkAttribute>
-                        <pkAttribute>IDTren</pkAttribute>
-                    </pkAttribute>
-                </primaryKey>
-                <uniqueKeys/>
-                <foreignKeys>
-                    <foreignKey>
-                        <fkAttribute>Tip</fkAttribute>
-                        <refAttribute>IDTip</refAttribute>
-                        <refTable>Tipuri</refTable>
-                    </foreignKey>
-                </foreignKeys>
-                <IndexFiles/>
-            </table>
-            <table tableName="Tipuri" fileName="Tipuri.bin">
-                <structure>
-                    <attribute columnName="IDTip" type="int" isnull="false">
-                        <isPrimaryKey>true</isPrimaryKey>
-                    </attribute>
-                    <attribute columnName="Descriere" type="nvarchar" length="50" isnull="false">
-                        <isPrimaryKey>false</isPrimaryKey>
-                    </attribute>
-                </structure>
-                <primaryKey>
-                    <pkAttribute>
-                        <pkAttribute>IDTip</pkAttribute>
-                    </pkAttribute>
-                </primaryKey>
-                <uniqueKeys/>
-                <foreignKeys/>
-                <IndexFiles/>
-            </table>
-        </tables>
-    </database>
     <database databaseName="Cofetarie">
         <tables>
             <table tableName="Produse" fileName="Produse.bin">
@@ -180,10 +131,10 @@
                     </foreignKey>
                 </foreignKeys>
                 <IndexFiles>
-                    <IndexFile indexName="id_nume" fileName="id_nume.ind" tableName="Produse" isUnique="false">
+                    <IndexFile indexName="nume_tip" fileName="nume_tip.ind" tableName="Produse" isUnique="true">
                         <IndexAttributes>
-                            <IAttribute>id</IAttribute>
                             <IAttribute>nume</IAttribute>
+                            <IAttribute>tip</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
                 </IndexFiles>
@@ -253,6 +204,62 @@
                         </IndexAttributes>
                     </IndexFile>
                 </IndexFiles>
+            </table>
+        </tables>
+    </database>
+    <database databaseName="CFR">
+        <tables>
+            <table tableName="Trenuri" fileName="Trenuri.bin">
+                <structure>
+                    <attribute columnName="IDTren" type="int" isnull="false">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="Nume" type="nvarchar" length="50" isnull="false">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="Tip" type="int" isnull="false">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>IDTren</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <uniqueKeys/>
+                <foreignKeys>
+                    <foreignKey>
+                        <fkAttribute>Tip</fkAttribute>
+                        <refAttribute>IDTip</refAttribute>
+                        <refTable>Tipuri</refTable>
+                    </foreignKey>
+                </foreignKeys>
+                <IndexFiles>
+                    <IndexFile indexName="nume_tip" fileName="nume_tip.ind" tableName="Trenuri" isUnique="false">
+                        <IndexAttributes>
+                            <IAttribute>Nume</IAttribute>
+                            <IAttribute>Tip</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
+                </IndexFiles>
+            </table>
+            <table tableName="Tipuri" fileName="Tipuri.bin">
+                <structure>
+                    <attribute columnName="IDTip" type="int" isnull="false">
+                        <isPrimaryKey>true</isPrimaryKey>
+                    </attribute>
+                    <attribute columnName="Descriere" type="nvarchar" length="50" isnull="false">
+                        <isPrimaryKey>false</isPrimaryKey>
+                    </attribute>
+                </structure>
+                <primaryKey>
+                    <pkAttribute>
+                        <pkAttribute>IDTip</pkAttribute>
+                    </pkAttribute>
+                </primaryKey>
+                <uniqueKeys/>
+                <foreignKeys/>
+                <IndexFiles/>
             </table>
         </tables>
     </database>
