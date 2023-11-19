@@ -793,8 +793,10 @@ public class MainController {
                     return false;
                 }
                 String doc_values = doc.getString("values");
-                if (!doc_values.contains("$")){
-                    doc_values = doc_values.replace("#", "$");
+                if (crtTable.getPrimaryKeys().size() > 1){
+                    if (!doc_values.contains("$")){
+                        doc_values = doc_values.replace("#", "$");
+                    }
                 }
                 String pkstring_index = primaryKeyString.replace("#", "$");
                 Bson updates = Updates.combine(Updates.set("values", doc_values + "#" + pkstring_index));
