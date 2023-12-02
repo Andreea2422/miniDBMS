@@ -70,6 +70,7 @@ public class MainController {
 
     public void refreshTree(ActionEvent event) {
         init();
+        sqlField.setText("");
         resultTextArea.setText("");
         resultTextArea.setStyle("-fx-text-fill: black;");
     }

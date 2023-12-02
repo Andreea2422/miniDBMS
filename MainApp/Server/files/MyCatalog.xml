@@ -137,6 +137,11 @@
                             <IAttribute>tip</IAttribute>
                         </IndexAttributes>
                     </IndexFile>
+                    <IndexFile indexName="nume" fileName="nume.ind" tableName="Produse" isUnique="true">
+                        <IndexAttributes>
+                            <IAttribute>nume</IAttribute>
+                        </IndexAttributes>
+                    </IndexFile>
                 </IndexFiles>
             </table>
             <table tableName="Tipuri" fileName="Tipuri.bin">

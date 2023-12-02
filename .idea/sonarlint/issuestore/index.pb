@@ -36,3 +36,5 @@ a
 0MainApp/Server/src/main/java/model/DataBase.java,b\b\bbfe86d86674336fbe277cb98f96646dd684e346
 b
 2MainApp/Client/src/main/java/HelloApplication.java,2\f\2f5f23b2108d35a2f74bf029fea13ceaf6628343
+l
+<MainApp/Client/src/main/java/controller/HelloController.java,f\d\fd3c0b8bf9bd26dc640bc083b6eadb2927050789
