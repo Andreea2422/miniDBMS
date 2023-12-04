@@ -7,8 +7,6 @@ G
 MainApp/settings.gradle,3\8\38f2f878d8299ec0c4d574bbb5617297393db510
 ]
 -MainApp/Server/src/main/java/utils/Utils.java,d\0\d0292e3f9a0d197baa688f96c033f9ba512c9258
-P
- MainApp/Server/files/Catalog.xml,b\5\b5a2a284ed1ce6cc992d6f4481396de00d007ca0
 b
 2MainApp/Server/src/main/java/model/PrimaryKey.java,a\d\adc2b4bafe7943d85fec55f52803d6cf11ec6d91
 a
@@ -38,3 +36,5 @@ b
 2MainApp/Client/src/main/java/HelloApplication.java,2\f\2f5f23b2108d35a2f74bf029fea13ceaf6628343
 l
 <MainApp/Client/src/main/java/controller/HelloController.java,f\d\fd3c0b8bf9bd26dc640bc083b6eadb2927050789
+]
+-MainApp/Server/src/main/java/model/Index.java,2\d\2da27bfbff1a6543d155b2df6d385ce2fecf9104

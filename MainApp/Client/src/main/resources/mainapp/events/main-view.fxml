@@ -60,6 +60,7 @@
               <items>
                 <MenuItem mnemonicParsing="false" onAction="#runSqlStm" text="Run Statement" />
                   <MenuItem mnemonicParsing="false" onAction="#refreshTree" text="Refresh" />
+                  <MenuItem mnemonicParsing="false" onAction="#insertData" text="Insert Data" />
               </items>
             </Menu>
       </menus>

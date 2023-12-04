@@ -16,19 +16,19 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 import model.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.regex;
 import static utils.Utils.saveDBMSToXML;
 
 public class MainController {
@@ -438,6 +438,7 @@ public class MainController {
         crtDatabase = null;
     }
 
+
     ///////////////////////////////////////////////////////////
     // Methods for SQL Statements /////////////////////////////
 
@@ -446,40 +447,36 @@ public class MainController {
     }
 
     public void ProcessSqlStatement() {
-        if (ProcessUseDatabase()) {
+        if (ProcessUseDatabase(sqlField.getText())) {
             return;
         }
-        if (ProcessCreateDatabase()) {
-            return;
-        }
-        if (ProcessDropDatabase()) {
-            return;
-        }
-        if (ProcessDropTable()) {
-            return;
-        }
-        if (ProcessInsertIntoTable()) {
+        if (ProcessInsertIntoTable(sqlField.getText())) {
             return;
         }
         if (ProcessDeleteFromTable()) {
             return;
-        } else {
+        }
+        if (ProcessSelectFromTable()){
+            return;
+        }
+        else {
             resultTextArea.setText("SQL Statement unknown!");
         }
     }
 
-    public boolean ProcessUseDatabase() {
-        String useDatabasePatter = "(use) [a-zA-Z_$][a-zA-Z_$0-9]*;";
+
+    public boolean ProcessUseDatabase(String sqlStmt) {
+        String useDatabasePattern = "(use) [a-zA-Z_$][a-zA-Z_$0-9]*;";
         String databaseName = "";
 
-        Pattern pattern = Pattern.compile(useDatabasePatter);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
+        Pattern pattern = Pattern.compile(useDatabasePattern);
+        Matcher matcher = pattern.matcher(sqlStmt);
 
         if (!matcher.matches()) {
             return false;
         }
 
-        databaseName = sqlField.getText().substring(4, sqlField.getText().length() - 1);
+        databaseName = sqlStmt.substring(4, sqlStmt.length() - 1);
 
         List<DataBase> databaseList = myDBMS.listDatabases();
         if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
@@ -492,101 +489,7 @@ public class MainController {
         return true;
     }
 
-    public boolean ProcessCreateDatabase() {
-        String createDatabasePatter = "(create database) [a-zA-Z_$][a-zA-Z_$0-9]*;";
-        String databaseName = "";
-
-        Pattern pattern = Pattern.compile(createDatabasePatter);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
-
-        if (!matcher.matches()) {
-            return false;
-        }
-
-        databaseName = sqlField.getText().substring(16, sqlField.getText().length() - 1);
-
-        List<DataBase> databaseList = myDBMS.listDatabases();
-        if (databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name already exists. Try again!");
-            return true;
-        }
-
-        myDBMS.createDatabase(databaseName);
-        saveDBMSToXML(myDBMS);
-        mongoClient.getDatabase(databaseName);
-        resultTextArea.setText("Database " + databaseName + " was created!");
-        crtDatabase = myDBMS.getDatabaseByName(databaseName);
-        return true;
-    }
-
-    public boolean ProcessDropDatabase() {
-        String dropDatabasePatter = "(drop database) [a-zA-Z_$][a-zA-Z_$0-9]*;";
-        String databaseName = "";
-
-        Pattern pattern = Pattern.compile(dropDatabasePatter);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
-
-        if (!matcher.matches()) {
-            return false;
-        }
-
-        databaseName = sqlField.getText().substring(14, sqlField.getText().length() - 1);
-
-        List<DataBase> databaseList = myDBMS.listDatabases();
-        if (!databaseList.stream().map(database -> database.getDatabaseName().toLowerCase()).toList().contains(databaseName.toLowerCase())) {
-            resultTextArea.setText("This database name does not exist. Try again!");
-            return true;
-        }
-
-        myDBMS.dropDatabase(databaseName);
-        saveDBMSToXML(myDBMS);
-
-        MongoDatabase database = mongoClient.getDatabase(databaseName);
-        database.drop();
-
-        resultTextArea.setText("Database " + databaseName + " was dropped!");
-        crtDatabase = null;
-        return true;
-    }
-
-    public boolean ProcessDropTable() {
-        String dropTablePatter = "(drop table) [a-zA-Z_$][a-zA-Z_$0-9]*;";
-        String tableName = "";
-
-        Pattern pattern = Pattern.compile(dropTablePatter);
-        Matcher matcher = pattern.matcher(sqlField.getText().toLowerCase());
-
-        if (!matcher.matches()) {
-            return false;
-        }
-
-        if (crtDatabase == null) {
-            resultTextArea.setText("Please select a database to use first!");
-            return true;
-        }
-
-        tableName = sqlField.getText().substring(11, sqlField.getText().length() - 1);
-
-        List<Table> tableList = crtDatabase.getTables();
-        if (!tableList.stream().map(table -> table.getTableName().toLowerCase()).toList().contains(tableName.toLowerCase())) {
-            resultTextArea.setText("Table name " + tableName + " does not exist in " + crtDatabase.getDatabaseName() + " database. Try again!");
-            return true;
-        }
-
-        crtDatabase.dropTable(tableName);
-        saveDBMSToXML(myDBMS);
-
-        //Connecting to the database
-        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
-        // drop table
-        database.getCollection(tableName).drop();
-
-        resultTextArea.setText("Table " + tableName + " was dropped!");
-        return true;
-    }
-
-
-    public boolean ProcessInsertIntoTable() {
+    public boolean ProcessInsertIntoTable(String sqlStmt) {
         // Define the regex pattern to match the INSERT INTO statement
         String insertPattern = "(insert into) (\\S+).*\\((.*?)\\).*(values).*\\((.*?)\\)(.*\\;?);";
 
@@ -596,7 +499,7 @@ public class MainController {
 
         // Compile the regex pattern and create a matcher
         Pattern pattern = Pattern.compile(insertPattern);
-        Matcher matcher = pattern.matcher(sqlField.getText());
+        Matcher matcher = pattern.matcher(sqlStmt);
 
         // Check if the provided SQL command matches the expected pattern
         if (!matcher.matches()) {
@@ -909,6 +812,14 @@ public class MainController {
                             resultTextArea.setText("Foreign Key constraint failure.");
                             return false;
                         }
+
+//                        for (Index index : table.getIndexes()) {
+//                            MongoCollection<Document> collection = database.getCollection(index.getIndexName());
+//                            Document doc = collection.find(eq("_id", columnValue)).first();
+//                            if (doc != null) {
+//                                resultTextArea.setText("Foreign Key constraint failure.");
+//                                return false;
+//                            }
                     }
                 }
             }
@@ -916,5 +827,396 @@ public class MainController {
 
         return true;
     }
+
+    public void insertData(ActionEvent event) {
+        String SqlStatement, ctrDb;
+        int n = 100;
+
+        ctrDb = "use Cofetarie;";
+        ProcessUseDatabase(ctrDb);
+
+        // collection Produse
+        for (int i = 5; i < n; i++) {
+            Random random = new Random();
+            // Generate a random integer between 1 and 2
+            int tip = random.nextInt(2) + 1;
+            double price = Math.round(Math.random() * 10000d) / 100d;
+
+            SqlStatement = "insert into Produse (id,nume,tip,price) values (" +
+                    i + "," +
+                    "nume_" + i + "," +
+                    tip + "," +
+                    price + "," + ");";
+            ProcessInsertIntoTable(SqlStatement);
+        }
+
+        ctrDb = "use CFR;";
+        ProcessUseDatabase(ctrDb);
+
+        // collection Trenuri
+        for (int i = 3; i < n; i++) {
+            Random random = new Random();
+            int tip = random.nextInt(2) + 1;
+
+            SqlStatement = "insert into Trenuri (IDTren,Nume,Tip) values (" +
+                    "IDTren_" + i + "," +
+                    "Nume_" + i + "," +
+                    tip + ");";
+            ProcessInsertIntoTable(SqlStatement);
+        }
+
+        resultTextArea.setText("Data successfully inserted;");
+    }
+
+
+    private boolean ProcessSelectFromTable() {
+        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
+
+        Pattern pattern = Pattern.compile(selectPattern, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(sqlField.getText());
+
+        if (!matcher.matches()) {
+            return false;
+        }
+
+        if (crtDatabase == null) {
+            resultTextArea.setText("Please select a database to use first!");
+            return true;
+        }
+
+        // is distinct
+        String isDistinctString = matcher.group(3);
+        boolean isDistinct = false;
+        if (isDistinctString != null) {
+            isDistinct = true;
+        }
+
+        // tables in which to search
+        String tablesInWhichToSearch = matcher.group(9);
+        if (tablesInWhichToSearch != null) {
+            tablesInWhichToSearch = tablesInWhichToSearch.trim();
+        }
+        List<String> tablesInWhichToSearchList = Arrays.stream(tablesInWhichToSearch.split(",")).map(s -> s.trim()).toList();
+
+        // columns to show
+        String columnsToShow = matcher.group(5);
+        if (columnsToShow != null) {
+            columnsToShow = columnsToShow.trim();
+        }
+        List<String> columnsToShowAux = Arrays.stream(columnsToShow.split(",")).map(s -> s.trim()).toList();
+        List<Pair<String,String>> columnAndTableList = new ArrayList<>();
+        for (String column: columnsToShowAux) {
+            if (column.contains(".")) {
+                List<String> columnAndTable = List.of(column.split("."));
+                columnAndTableList.add(new Pair<>(columnAndTable.get(0), columnAndTable.get(1)));
+            } else {
+                columnAndTableList.add(new Pair<>(column.trim(), tablesInWhichToSearchList.get(0)));
+            }
+        }
+
+        // where clauses
+        String whereClause = matcher.group(13);
+        if (whereClause != null) {
+            whereClause = whereClause.trim();
+        }
+
+        for (String tableName: tablesInWhichToSearchList) {
+            Table crtTable = crtDatabase.getTableByName(tableName);
+            if (crtTable == null) {
+                resultTextArea.setText("Table " + tableName + " does not exist in the " + crtDatabase.getDatabaseName() + " database.");
+                return true;
+            }
+        }
+
+        MongoDatabase database = mongoClient.getDatabase(crtDatabase.getDatabaseName());
+
+        List<Document> resultDocuments = null;
+        List<Document> resultDocumentsList = null;
+        if (whereClause != null && !whereClause.trim().isEmpty()) {
+            resultDocumentsList = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
+        } else {
+            for (String tableName: tablesInWhichToSearchList) {
+                MongoCollection<Document> collection = database.getCollection(tableName);
+                resultDocuments = collection.find().into(new ArrayList<>());
+
+                if (resultDocumentsList == null) {
+                    resultDocumentsList = resultDocuments;
+                } else {
+                    resultDocumentsList.addAll(resultDocuments);
+                }
+            }
+        }
+
+        // Display query results
+        DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
+
+        return true;
+    }
+
+    private List<Document> ExecuteMultipleWhereCondition(String whereClause, List<String> tablesInWhichToSearchList, MongoDatabase database) {
+        List<String> whereClauses = List.of(whereClause.split(" and "));
+        List<Document> documents;
+        List<Document> finalDocuments = new ArrayList<>();
+        for(String clause : whereClauses) {
+            documents = ExecuteWhereCondition(clause, tablesInWhichToSearchList, database);
+            if (finalDocuments.isEmpty()) {
+                finalDocuments = documents;
+            } else {
+                finalDocuments = finalDocuments.stream()
+                        .distinct()
+                        .filter(documents::contains)
+                        .collect(Collectors.toSet()).stream().toList();
+            }
+        }
+
+        return finalDocuments;
+    }
+
+    private List<Document> ExecuteWhereCondition(String whereClause, List<String> tablesInWhichToSearchList, MongoDatabase database) {
+        // Implement logic to parse and execute WHERE conditions
+        String condition = null;
+        if (whereClause.contains("=")) {
+            condition = "=";
+        }
+        if (whereClause.contains("like")) {
+            condition = "like";
+        }
+        if (whereClause.contains("<")) {
+            condition = "<";
+        }
+        if (whereClause.contains(">")) {
+            condition = ">";
+        }
+        if (whereClause.contains("<=")) {
+            condition = "<=";
+        }
+        if (whereClause.contains(">=")) {
+            condition = ">=";
+        }
+        String[] parts = whereClause.split(condition);
+        List<Document> resultDocuments = new ArrayList<>();
+
+        if (parts.length == 2) {
+            String columnNameAndTable = parts[0].trim();
+            String value = parts[1].trim().replaceAll("'", "");
+            String columnName;
+            String tableName;
+
+            if (columnNameAndTable.contains(".")) {
+                tableName = columnNameAndTable.split(".")[0];
+                columnName = columnNameAndTable.split(".")[1];
+            } else {
+                columnName = columnNameAndTable;
+                tableName = tablesInWhichToSearchList.get(0);
+            }
+
+            Table crtTable = crtDatabase.getTableByName(tableName);
+            List<Document> docs = new ArrayList<>();
+            boolean thereIsIndex = false;
+            for(Index index : crtTable.getIndexes()) {
+                if (index.getColumns().get(0).equalsIgnoreCase(columnName)) {
+                    MongoCollection<Document> collection = database.getCollection(columnName + "_" + tableName + "_index");
+                    switch (condition) {
+                        case "=":
+                            docs.addAll(collection.find(Filters.eq("_id", value)).into(new ArrayList<>()));
+                            break;
+                        case "like":
+                            if (value.contains("%")) {
+                                int percentIndex = value.indexOf('%');
+
+                                String startValue;
+                                String endValue;
+
+                                if (percentIndex != -1) {
+                                    startValue = value.substring(0, percentIndex);
+                                    endValue = value.substring(percentIndex + 1);
+                                } else {
+                                    // If '%' is not found, the whole string is considered as startValue
+                                    startValue = value;
+                                    endValue = "";
+                                }
+
+                                Pattern startPattern = Pattern.compile("^"+Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
+                                Pattern endPattern = Pattern.compile(Pattern.quote(endValue)+"$", Pattern.CASE_INSENSITIVE);
+
+                                if (startValue.isEmpty() && !endValue.isEmpty()) {
+                                    docs.addAll(collection.find(regex("_id", endPattern)).into(new ArrayList<>()));
+                                } else if (!startValue.isEmpty() && endValue.isEmpty())
+                                {
+                                    docs.addAll(collection.find(regex("_id", startPattern)).into(new ArrayList<>()));
+                                }
+
+                            }
+                            break;
+                        case "<":
+                            docs.addAll(collection.find(Filters.lt("_id", value)).into(new ArrayList<>()));
+                            break;
+                        case ">":
+                            docs.addAll(collection.find(Filters.gt("_id", value)).into(new ArrayList<>()));
+                            break;
+                        case "<=":
+                            docs.addAll(collection.find(Filters.lte("_id", value)).into(new ArrayList<>()));
+                            break;
+                        case ">=":
+                            docs.addAll(collection.find(Filters.gte("_id", value)).into(new ArrayList<>()));
+                            break;
+                    }
+                    thereIsIndex = true;
+                }
+            }
+            Map<String, String> columnValueMap;
+            if (!thereIsIndex) {
+                MongoCollection<Document> collection = database.getCollection(tableName);
+                for (Document document : collection.find()) {
+                    columnValueMap = getColumnValueMap(document, crtTable);
+                    if (columnValueMap.get(columnName) != null) {
+                        switch (condition){
+                            case "=":
+                                if (columnValueMap.get(columnName).equalsIgnoreCase(value)) {
+                                    resultDocuments.add(document);
+                                }
+                                break;
+                            case "like":
+                                if (value.contains("%")) {
+                                    int percentIndex = value.indexOf('%');
+
+                                    String startValue;
+                                    String endValue;
+
+                                    if (percentIndex != -1) {
+                                        startValue = value.substring(0, percentIndex);
+                                        endValue = value.substring(percentIndex + 1);
+                                    } else {
+                                        startValue = value;
+                                        endValue = "";
+                                    }
+
+                                    Pattern startPattern = Pattern.compile("^"+Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
+                                    Pattern endPattern = Pattern.compile(Pattern.quote(endValue)+"$", Pattern.CASE_INSENSITIVE);
+
+                                    if (startValue.isEmpty() && !endValue.isEmpty()) {
+                                        if (columnValueMap.get(columnName).matches(String.valueOf(endPattern))) {
+                                            resultDocuments.add(document);
+                                        }
+                                    } else if (!startValue.isEmpty() && endValue.isEmpty())
+                                    {
+                                        if (columnValueMap.get(columnName).matches(String.valueOf(startPattern))) {
+                                            resultDocuments.add(document);
+                                        }
+                                    }
+
+                                }
+                                break;
+                            case "<":
+                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    int columnValue = Integer.parseInt(columnValueMap.get(columnName));
+                                    int inputValue = Integer.parseInt(value);
+                                    if (columnValue < inputValue)
+                                        resultDocuments.add(document);
+                                }
+                                break;
+                            case ">":
+                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    int columnValue = Integer.parseInt(columnValueMap.get(columnName));
+                                    int inputValue = Integer.parseInt(value);
+                                    if (columnValue > inputValue)
+                                        resultDocuments.add(document);
+                                }
+                                break;
+                            case "<=":
+                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    int columnValue = Integer.parseInt(columnValueMap.get(columnName));
+                                    int inputValue = Integer.parseInt(value);
+                                    if (columnValue <= inputValue)
+                                        resultDocuments.add(document);
+                                }
+                                break;
+                            case ">=":
+                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    int columnValue = Integer.parseInt(columnValueMap.get(columnName));
+                                    int inputValue = Integer.parseInt(value);
+                                    if (columnValue >= inputValue)
+                                        resultDocuments.add(document);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+
+            if (thereIsIndex) {
+                for (Document doc : docs) {
+                    MongoCollection<Document> collection = database.getCollection(tableName);
+                    resultDocuments.addAll(collection.find(Filters.eq("_id", doc.get("values"))).into(new ArrayList<>()));
+                }
+            }
+        }
+
+        return resultDocuments;
+    }
+
+    private Map<String, String> getColumnValueMap(Document document, Table crtTable) {
+        Map<String, String> ColumnValueMap = new LinkedHashMap<>();
+        int index = 0;
+        for (PrimaryKey pk : crtTable.getPrimaryKeys()) {
+            ColumnValueMap.put(pk.getPkAttribute(), document.get("_id").toString().split("#")[index]);
+            index++;
+        }
+        index = 0;
+        for (Column col : crtTable.getColumns()) {
+            if (ColumnValueMap.get(col.getColumnName()) == null) {
+                ColumnValueMap.put(col.getColumnName(), document.get("values").toString().split("#")[index]);
+                index++;
+            }
+        }
+
+        return  ColumnValueMap;
+    }
+
+    private void DisplayQueryResults(List<Document> resultDocuments, List<Pair<String, String>> selectedColumns, boolean isDistinct) {
+        // Implement logic to display query results
+        StringBuilder resultStringBuilder = new StringBuilder();
+        List<String> result = new ArrayList<>();
+
+        if (resultDocuments == null || resultDocuments.isEmpty()) {
+            resultTextArea.setText("No records found!");
+            return;
+        }
+
+        for (Document document : resultDocuments) {
+            // Display selected columns
+            resultStringBuilder = new StringBuilder();
+            for (Pair<String, String> column : selectedColumns) {
+                Table crtTable = crtDatabase.getTableByName(column.getValue());
+
+                Map<String, String> columnValueMap = getColumnValueMap(document, crtTable);
+                if (!column.getKey().trim().equals("*")) {
+                    for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
+                        if (Objects.equals(entry.getKey(), column.getKey())) {
+                            resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
+                        }
+                    }
+                } else {
+                    for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
+                        resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
+                    }
+                }
+            }
+            resultStringBuilder.setLength(resultStringBuilder.length() - 2); // Remove trailing comma and space
+            resultStringBuilder.append("\n");
+            result.add(resultStringBuilder.toString());
+        }
+
+        if (isDistinct) {
+            result = result.stream().distinct().toList();
+        }
+
+        resultTextArea.setText(result.toString()
+                .replace("[","")
+                .replace("]", "")
+                .replace(", ", ""));
+    }
+
+
 
 }
