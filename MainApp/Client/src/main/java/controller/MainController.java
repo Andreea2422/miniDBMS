@@ -1108,35 +1108,60 @@ public class MainController {
                                 }
                                 break;
                             case "<":
-                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                if (columnValueMap.get(columnName).matches("[-+]?\\d+") && value.matches("[-+]?\\d+")) {
                                     int columnValue = Integer.parseInt(columnValueMap.get(columnName));
                                     int inputValue = Integer.parseInt(value);
-                                    if (columnValue < inputValue)
+                                    if (columnValue < inputValue) {
                                         resultDocuments.add(document);
+                                    }
+                                } else if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    Double columnValue = Double.parseDouble(columnValueMap.get(columnName));
+                                    Double inputValue = Double.parseDouble(value);
+                                    if (columnValue < inputValue) {
+                                        resultDocuments.add(document);
+                                    }
                                 }
                                 break;
                             case ">":
-                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                if (columnValueMap.get(columnName).matches("[-+]?\\d+") && value.matches("[-+]?\\d+")) {
                                     int columnValue = Integer.parseInt(columnValueMap.get(columnName));
                                     int inputValue = Integer.parseInt(value);
                                     if (columnValue > inputValue)
                                         resultDocuments.add(document);
+                                } else if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    Double columnValue = Double.parseDouble(columnValueMap.get(columnName));
+                                    Double inputValue = Double.parseDouble(value);
+                                    if (columnValue > inputValue) {
+                                        resultDocuments.add(document);
+                                    }
                                 }
                                 break;
                             case "<=":
-                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                if (columnValueMap.get(columnName).matches("[-+]?\\d+") && value.matches("[-+]?\\d+")) {
                                     int columnValue = Integer.parseInt(columnValueMap.get(columnName));
                                     int inputValue = Integer.parseInt(value);
                                     if (columnValue <= inputValue)
                                         resultDocuments.add(document);
+                                } else if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    Double columnValue = Double.parseDouble(columnValueMap.get(columnName));
+                                    Double inputValue = Double.parseDouble(value);
+                                    if (columnValue <= inputValue) {
+                                        resultDocuments.add(document);
+                                    }
                                 }
                                 break;
                             case ">=":
-                                if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                if (columnValueMap.get(columnName).matches("[-+]?\\d+") && value.matches("[-+]?\\d+")) {
                                     int columnValue = Integer.parseInt(columnValueMap.get(columnName));
                                     int inputValue = Integer.parseInt(value);
                                     if (columnValue >= inputValue)
                                         resultDocuments.add(document);
+                                } else if (columnValueMap.get(columnName).matches("-?\\d+(\\.\\d+)?") && value.matches("-?\\d+(\\.\\d+)?")) {
+                                    Double columnValue = Double.parseDouble(columnValueMap.get(columnName));
+                                    Double inputValue = Double.parseDouble(value);
+                                    if (columnValue >= inputValue) {
+                                        resultDocuments.add(document);
+                                    }
                                 }
                                 break;
                         }
