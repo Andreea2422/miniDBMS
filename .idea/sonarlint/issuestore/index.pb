@@ -38,3 +38,7 @@ l
 <MainApp/Client/src/main/java/controller/HelloController.java,f\d\fd3c0b8bf9bd26dc640bc083b6eadb2927050789
 ]
 -MainApp/Server/src/main/java/model/Index.java,2\d\2da27bfbff1a6543d155b2df6d385ce2fecf9104
+^
+.MainApp/Server/src/main/java/model/Column.java,8\e\8e735edc04f986ffc6ca3c95e960f566390c2964
+]
+-MainApp/Server/src/main/java/model/Table.java,3\2\32eeae415dfe76d6a89eb83e290ac0fb3dc47839

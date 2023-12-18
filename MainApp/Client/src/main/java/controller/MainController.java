@@ -2,6 +2,7 @@ package controller;
 
 
 import com.mongodb.MongoException;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
@@ -21,7 +22,9 @@ import model.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
+import javax.print.Doc;
 import java.io.IOException;
+import java.lang.invoke.StringConcatException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.regex;
+import static com.mongodb.client.model.Sorts.ascending;
 import static utils.Utils.saveDBMSToXML;
 
 public class MainController {
@@ -870,7 +874,10 @@ public class MainController {
 
 
     private boolean ProcessSelectFromTable() {
-        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
+//        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
+                                                                        //group(5)                                                                        //group(9)
+          String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|\\w+|\\*)(?:\\s*,\\s*(?:\\w+\\.\\w+|\\w+|\\*))*)(\\s+)(from)(\\s+)((?:\\w+\\s*(?:,\\s*\\w+\\s*)*))(?:\\s*(?:(inner|left|right)?\\s+(join)\\s+(\\w+)\\s+(on)\\s+(\\w+\\.\\w+=\\w+\\.\\w+)))?(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
+
 
         Pattern pattern = Pattern.compile(selectPattern, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(sqlField.getText());
@@ -896,7 +903,7 @@ public class MainController {
         if (tablesInWhichToSearch != null) {
             tablesInWhichToSearch = tablesInWhichToSearch.trim();
         }
-        List<String> tablesInWhichToSearchList = Arrays.stream(tablesInWhichToSearch.split(",")).map(s -> s.trim()).toList();
+        List<String> tablesInWhichToSearchList = Arrays.stream(tablesInWhichToSearch.split(",")).map(s -> s.trim()).collect(Collectors.toList());
 
         // columns to show
         String columnsToShow = matcher.group(5);
@@ -907,15 +914,29 @@ public class MainController {
         List<Pair<String,String>> columnAndTableList = new ArrayList<>();
         for (String column: columnsToShowAux) {
             if (column.contains(".")) {
-                List<String> columnAndTable = List.of(column.split("."));
+                List<String> columnAndTable = List.of(column.split("\\."));
                 columnAndTableList.add(new Pair<>(columnAndTable.get(0), columnAndTable.get(1)));
             } else {
                 columnAndTableList.add(new Pair<>(column.trim(), tablesInWhichToSearchList.get(0)));
             }
         }
 
+//        List<String> copy = tablesInWhichToSearchList;
+
+        // join tables
+        String joinTable = matcher.group(12);
+        if (joinTable != null){
+            joinTable = joinTable.trim();
+            tablesInWhichToSearchList.add(joinTable);
+        }
+        // ON condition
+        String onCond = matcher.group(14);
+        if (onCond != null){
+            onCond = onCond.trim();
+        }
+
         // where clauses
-        String whereClause = matcher.group(13);
+        String whereClause = matcher.group(18);
         if (whereClause != null) {
             whereClause = whereClause.trim();
         }
@@ -932,8 +953,14 @@ public class MainController {
 
         List<Document> resultDocuments = null;
         List<Document> resultDocumentsList = null;
-        if (whereClause != null && !whereClause.trim().isEmpty()) {
+        List<Document[]> resultDocumentsJoin = null;
+        if (joinTable == null && onCond == null && whereClause != null && !whereClause.trim().isEmpty()) {
             resultDocumentsList = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
+            DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
+        } else if (joinTable != null && onCond != null) {
+            //NOT FINAL
+            resultDocumentsJoin = executeJoinOperation(joinTable, onCond, whereClause, tablesInWhichToSearchList, database);
+            DisplayJoinResults(resultDocumentsJoin);
         } else {
             for (String tableName: tablesInWhichToSearchList) {
                 MongoCollection<Document> collection = database.getCollection(tableName);
@@ -945,12 +972,62 @@ public class MainController {
                     resultDocumentsList.addAll(resultDocuments);
                 }
             }
+            DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
         }
 
-        // Display query results
-        DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
+//        // Display query results
+//        DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
 
         return true;
+    }
+
+    //NOT FINAL
+    private List<Document[]> executeJoinOperation(String joinTable, String onCond, String whereClause, List<String> tablesInWhichToSearchList, MongoDatabase database) {
+        List<Document> documents;
+        List<Document> finalDocuments = new ArrayList<>();
+
+        List<List<Document>> records = new ArrayList<>();
+
+        // if oncond has index use index-nested-loop-join else hash-join
+
+        for (String table: tablesInWhichToSearchList) {
+            MongoCollection<Document> collection = database.getCollection(table);
+            List<Document> records1 = collection.find().into(new ArrayList<>());
+            records.add(records1);
+        }
+        //hashJoin with 2 tables(TO DO for more than 2)
+        List<Document[]> finaly= hashJoin(records.get(0), records.get(1));
+        System.out.println(finaly);
+
+
+        if (whereClause!=null && !whereClause.trim().isEmpty()) {
+            finalDocuments = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
+        }
+
+//        return finalDocuments;
+        return finaly;
+    }
+
+    private List<Document[]> hashJoin(List<Document> records1, List<Document> records2){
+        List<Document[]> result = new ArrayList<>();
+        Map<String, List<Document>> map = new HashMap<>();
+
+        for (Document record : records1) {
+            List<Document> v = map.getOrDefault(record.getString("_id"), new ArrayList<>());
+            v.add(record);
+            map.put(record.getString("_id"), v);
+        }
+
+        for (Document record : records2) {
+            List<Document> lst = map.get(record.getString("_id"));
+            if (lst != null) {
+                lst.stream().forEach(r -> {
+                    result.add(new Document[]{r, record});
+                });
+            }
+        }
+
+        return result;
     }
 
     private List<Document> ExecuteMultipleWhereCondition(String whereClause, List<String> tablesInWhichToSearchList, MongoDatabase database) {
@@ -1012,13 +1089,20 @@ public class MainController {
 
             Table crtTable = crtDatabase.getTableByName(tableName);
             List<Document> docs = new ArrayList<>();
+//            FindIterable<Document> sortedDocs;
             boolean thereIsIndex = false;
             for(Index index : crtTable.getIndexes()) {
                 if (index.getColumns().get(0).equalsIgnoreCase(columnName)) {
                     MongoCollection<Document> collection = database.getCollection(columnName + "_" + tableName + "_index");
+//                    sortedDocs = collection.find().sort(ascending(columnName));
                     switch (condition) {
                         case "=":
                             docs.addAll(collection.find(Filters.eq("_id", value)).into(new ArrayList<>()));
+//                            for (Document doc : sortedDocs) {
+//                                if (doc.get("_id").equals(value)) {
+//                                    docs.add(doc);
+//                                }
+//                            }
                             break;
                         case "like":
                             if (value.contains("%")) {
@@ -1172,7 +1256,7 @@ public class MainController {
             if (thereIsIndex) {
                 for (Document doc : docs) {
                     MongoCollection<Document> collection = database.getCollection(tableName);
-                    resultDocuments.addAll(collection.find(Filters.eq("_id", doc.get("values"))).into(new ArrayList<>()));
+                    resultDocuments.addAll(collection.find(eq("_id", doc.get("values"))).into(new ArrayList<>()));
                 }
             }
         }
@@ -1197,6 +1281,7 @@ public class MainController {
 
         return  ColumnValueMap;
     }
+
 
     private void DisplayQueryResults(List<Document> resultDocuments, List<Pair<String, String>> selectedColumns, boolean isDistinct) {
         // Implement logic to display query results
@@ -1240,6 +1325,43 @@ public class MainController {
                 .replace("[","")
                 .replace("]", "")
                 .replace(", ", ""));
+    }
+
+    //NOT FINAL
+    private void DisplayJoinResults(List<Document[]> resultDocuments) {
+        // Implement logic to display query results
+        StringBuilder resultStringBuilder = new StringBuilder();
+        List<String> result = new ArrayList<>();
+
+        if (resultDocuments == null || resultDocuments.isEmpty()) {
+            resultTextArea.setText("No records found!");
+            return;
+        }
+
+        for (Document[] documents : resultDocuments) {
+            for (Document document : documents) {
+                String id = document.get("_id").toString();
+                String values = document.get("values").toString();
+                String formattedResult = null;
+
+                if (values.contains("#")){
+                    String[] valuesSplit = values.split("#");
+
+                    formattedResult = "id:" + id + " name:" + valuesSplit[0] +
+                            " tip:" + valuesSplit[1] + " price:" + valuesSplit[2] + "  ;  ";
+                }
+                else formattedResult = "id:" + id + " denumire:" + values;
+
+                resultStringBuilder.append(formattedResult);
+            }
+            resultStringBuilder.append("\n");
+        }
+
+        resultStringBuilder.setLength(resultStringBuilder.length() - 2);
+        result.add(resultStringBuilder.toString());
+
+        String formattedResultString = resultStringBuilder.toString().trim();
+        resultTextArea.setText(formattedResultString);
     }
 
 
