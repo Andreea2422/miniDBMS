@@ -1,6 +1,7 @@
 package controller;
 
 
+import com.google.gson.Gson;
 import com.mongodb.MongoException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
@@ -23,6 +24,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.print.Doc;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.invoke.StringConcatException;
 import java.util.*;
@@ -107,12 +109,12 @@ public class MainController {
                     } else if (tb.getForeignKeys().stream().map(fk ->
                             fk.getFkAttribute().toLowerCase()).toList().contains(cl.getColumnName().toLowerCase())) {
                         key = "FK";
-                        if (cl.getLength() != null){
+                        if (cl.getLength() != null) {
                             value = cl.getColumnName() + " (" + key + ", " + cl.getType() + "(" + cl.getLength() + ")" + ")";
                         } else value = cl.getColumnName() + " (" + key + ", " + cl.getType() + ")";
                     } else if (cl.getLength() != null) {
-                            value = cl.getColumnName() + " (" + cl.getType() + "(" + cl.getLength() + ")" + ")";
-                        } else value = cl.getColumnName() + " (" + cl.getType() + ")";
+                        value = cl.getColumnName() + " (" + cl.getType() + "(" + cl.getLength() + ")" + ")";
+                    } else value = cl.getColumnName() + " (" + cl.getType() + ")";
 
                     TreeItem<String> clItem = new TreeItem<>(value);
                     columns.getChildren().add(clItem);
@@ -120,7 +122,7 @@ public class MainController {
 
                 String keys_value;
                 List<PrimaryKey> pkList = tb.getPrimaryKeys();
-                if(!pkList.isEmpty()) {
+                if (!pkList.isEmpty()) {
                     keys_value = "PK_" + tb.getTableName();
                     TreeItem<String> keyItem = new TreeItem<>(keys_value);
                     keys.getChildren().add(keyItem);
@@ -349,7 +351,7 @@ public class MainController {
         // drop table
         database.getCollection(tableName).drop();
         // drop index
-        for (Index index: controllerTable.getIndexes()) {
+        for (Index index : controllerTable.getIndexes()) {
             database.getCollection(index.getIndexName()).drop();
         }
 
@@ -460,10 +462,9 @@ public class MainController {
         if (ProcessDeleteFromTable()) {
             return;
         }
-        if (ProcessSelectFromTable()){
+        if (ProcessSelectFromTable()) {
             return;
-        }
-        else {
+        } else {
             resultTextArea.setText("SQL Statement unknown!");
         }
     }
@@ -567,7 +568,7 @@ public class MainController {
         }
 
         List<Column> columnList = crtTable.getColumns();
-        int i=0;
+        int i = 0;
         boolean hasNulls = false;
         for (Column column : columnList) {
             if (!column.isPrimaryKey()) {
@@ -595,7 +596,7 @@ public class MainController {
             i++;
         }
 
-        if (!isFieldValid(crtTable, columnNames, columnValues, hasNulls)){
+        if (!isFieldValid(crtTable, columnNames, columnValues, hasNulls)) {
             return true;
         }
         if (!checkFKonInsert(crtTable, columnNames, columnValues, database)) {
@@ -640,7 +641,7 @@ public class MainController {
         // Validation logic to check if the fields are valid and if they allow nulls
         // If the fields are valid, return true; otherwise, return false
         List<Column> columnList = table.getColumns();
-        if ((columnList.size()!=columnNames.size() || columnValues.size()!=columnNames.size()) && !hasNulls){
+        if ((columnList.size() != columnNames.size() || columnValues.size() != columnNames.size()) && !hasNulls) {
             resultTextArea.setText("Invalid list of columns. List of columns must contain all fields.");
             return false;
         } else {
@@ -653,7 +654,7 @@ public class MainController {
             return true;
         }
 
-        for(ForeignKey foreignKey : crtTable.getForeignKeys()) {
+        for (ForeignKey foreignKey : crtTable.getForeignKeys()) {
             for (int i = 0; i < columnNames.size(); i++) {
                 if (columnNames.get(i).equalsIgnoreCase(foreignKey.getFkAttribute())) {
                     Table refTable = crtDatabase.getTableByName(foreignKey.getRefTable());
@@ -701,8 +702,8 @@ public class MainController {
                     return false;
                 }
                 String doc_values = doc.getString("values");
-                if (crtTable.getPrimaryKeys().size() > 1){
-                    if (!doc_values.contains("$")){
+                if (crtTable.getPrimaryKeys().size() > 1) {
+                    if (!doc_values.contains("$")) {
                         doc_values = doc_values.replace("#", "$");
                     }
                 }
@@ -768,7 +769,7 @@ public class MainController {
         //Creating a collection
         MongoCollection<Document> collection = database.getCollection(tableName);
 
-        if(!checkFKonDelete(crtTable, columnPK, columnValue, database)) {
+        if (!checkFKonDelete(crtTable, columnPK, columnValue, database)) {
             return true;
         }
         deleteFromIndexes(crtTable, columnPK, columnValue, database);
@@ -793,7 +794,7 @@ public class MainController {
                 Pattern pattern = Pattern.compile(patternStr, Pattern.CASE_INSENSITIVE);
                 Bson filter = Filters.regex("values", pattern);
                 Document nonuniqueDoc = collection.find(filter).first();
-                if (nonuniqueDoc != null){
+                if (nonuniqueDoc != null) {
                     // Update the document to remove "#columnValue" from the "values" field
                     // Retrieve the existing values from the document and replace "#3" from it
                     String existingValue = nonuniqueDoc.getString("values");
@@ -832,42 +833,48 @@ public class MainController {
         return true;
     }
 
-    public void insertData(ActionEvent event) {
-        String SqlStatement, ctrDb;
-        int n = 100;
+    public void insertData(ActionEvent event) throws IOException {
+        int n = 1000000;
 
-        ctrDb = "use Cofetarie;";
-        ProcessUseDatabase(ctrDb);
+        FileWriter file = new FileWriter("D:\\UNI\\MASTER AN 1\\ISGBD\\Produse.json");
+
+        Gson gson = new Gson();
 
         // collection Produse
-        for (int i = 5; i < n; i++) {
+        for (int i = 1; i <= n; i++) {
             Random random = new Random();
-            // Generate a random integer between 1 and 2
             int tip = random.nextInt(2) + 1;
             double price = Math.round(Math.random() * 10000d) / 100d;
+            String values = "nume_" + i + "#" + tip + "#" + price;
+            Document doc = new Document().append("_id", String.valueOf(i)).append("values", values);
 
-            SqlStatement = "insert into Produse (id,nume,tip,price) values (" +
-                    i + "," +
-                    "nume_" + i + "," +
-                    tip + "," +
-                    price + "," + ");";
-            ProcessInsertIntoTable(SqlStatement);
+            gson.toJson(doc, file);
+
         }
+        file.close();
 
-        ctrDb = "use CFR;";
-        ProcessUseDatabase(ctrDb);
+        // collection nume_idx
+        for (int i = 1; i <= n; i++) {
+            String id = "nume_" + i;
+            Document doc = new Document().append("_id", id).append("values", String.valueOf(i));
 
-        // collection Trenuri
-        for (int i = 3; i < n; i++) {
+            gson.toJson(doc, file);
+
+        }
+        file.close();
+
+        // collection nume_tip_idx
+        for (int i = 1; i <= n; i++) {
             Random random = new Random();
             int tip = random.nextInt(2) + 1;
+            String id = "nume_" + i + "$" + tip;
+            Document doc = new Document().append("_id", id).append("values", String.valueOf(i));
 
-            SqlStatement = "insert into Trenuri (IDTren,Nume,Tip) values (" +
-                    "IDTren_" + i + "," +
-                    "Nume_" + i + "," +
-                    tip + ");";
-            ProcessInsertIntoTable(SqlStatement);
+            gson.toJson(doc, file);
+
         }
+        file.close();
+
 
         resultTextArea.setText("Data successfully inserted;");
     }
@@ -875,8 +882,8 @@ public class MainController {
 
     private boolean ProcessSelectFromTable() {
 //        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
-                                                                        //group(5)                                                                        //group(9)
-          String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|\\w+|\\*)(?:\\s*,\\s*(?:\\w+\\.\\w+|\\w+|\\*))*)(\\s+)(from)(\\s+)((?:\\w+\\s*(?:,\\s*\\w+\\s*)*))(?:\\s*(?:(inner|left|right)?\\s+(join)\\s+(\\w+)\\s+(on)\\s+(\\w+\\.\\w+=\\w+\\.\\w+)))?(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
+        //group(5)                                                                        //group(9)
+        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|\\w+|\\*)(?:\\s*,\\s*(?:\\w+\\.\\w+|\\w+|\\*))*)(\\s+)(from)(\\s+)((?:\\w+\\s*(?:,\\s*\\w+\\s*)*))(?:\\s*(?:(inner|left|right)?\\s+(join)\\s+(\\w+)\\s+(on)\\s+(\\w+\\.\\w+=\\w+\\.\\w+)))?(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
 
 
         Pattern pattern = Pattern.compile(selectPattern, Pattern.CASE_INSENSITIVE);
@@ -911,8 +918,8 @@ public class MainController {
             columnsToShow = columnsToShow.trim();
         }
         List<String> columnsToShowAux = Arrays.stream(columnsToShow.split(",")).map(s -> s.trim()).toList();
-        List<Pair<String,String>> columnAndTableList = new ArrayList<>();
-        for (String column: columnsToShowAux) {
+        List<Pair<String, String>> columnAndTableList = new ArrayList<>();
+        for (String column : columnsToShowAux) {
             if (column.contains(".")) {
                 List<String> columnAndTable = List.of(column.split("\\."));
                 columnAndTableList.add(new Pair<>(columnAndTable.get(0), columnAndTable.get(1)));
@@ -925,13 +932,13 @@ public class MainController {
 
         // join tables
         String joinTable = matcher.group(12);
-        if (joinTable != null){
+        if (joinTable != null) {
             joinTable = joinTable.trim();
             tablesInWhichToSearchList.add(joinTable);
         }
         // ON condition
         String onCond = matcher.group(14);
-        if (onCond != null){
+        if (onCond != null) {
             onCond = onCond.trim();
         }
 
@@ -941,7 +948,7 @@ public class MainController {
             whereClause = whereClause.trim();
         }
 
-        for (String tableName: tablesInWhichToSearchList) {
+        for (String tableName : tablesInWhichToSearchList) {
             Table crtTable = crtDatabase.getTableByName(tableName);
             if (crtTable == null) {
                 resultTextArea.setText("Table " + tableName + " does not exist in the " + crtDatabase.getDatabaseName() + " database.");
@@ -962,7 +969,7 @@ public class MainController {
             resultDocumentsJoin = executeJoinOperation(joinTable, onCond, whereClause, tablesInWhichToSearchList, database);
             DisplayJoinResults(resultDocumentsJoin);
         } else {
-            for (String tableName: tablesInWhichToSearchList) {
+            for (String tableName : tablesInWhichToSearchList) {
                 MongoCollection<Document> collection = database.getCollection(tableName);
                 resultDocuments = collection.find().into(new ArrayList<>());
 
@@ -990,17 +997,17 @@ public class MainController {
 
         // if oncond has index use index-nested-loop-join else hash-join
 
-        for (String table: tablesInWhichToSearchList) {
+        for (String table : tablesInWhichToSearchList) {
             MongoCollection<Document> collection = database.getCollection(table);
             List<Document> records1 = collection.find().into(new ArrayList<>());
             records.add(records1);
         }
         //hashJoin with 2 tables(TO DO for more than 2)
-        List<Document[]> finaly= hashJoin(records.get(0), records.get(1));
-        System.out.println(finaly);
+        List<Document[]> finaly = hashJoin(records.get(0), records.get(1));
+//        System.out.println(finaly);
 
 
-        if (whereClause!=null && !whereClause.trim().isEmpty()) {
+        if (whereClause != null && !whereClause.trim().isEmpty()) {
             finalDocuments = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
         }
 
@@ -1008,7 +1015,7 @@ public class MainController {
         return finaly;
     }
 
-    private List<Document[]> hashJoin(List<Document> records1, List<Document> records2){
+    private List<Document[]> hashJoin(List<Document> records1, List<Document> records2) {
         List<Document[]> result = new ArrayList<>();
         Map<String, List<Document>> map = new HashMap<>();
 
@@ -1034,7 +1041,7 @@ public class MainController {
         List<String> whereClauses = List.of(whereClause.split(" and "));
         List<Document> documents;
         List<Document> finalDocuments = new ArrayList<>();
-        for(String clause : whereClauses) {
+        for (String clause : whereClauses) {
             documents = ExecuteWhereCondition(clause, tablesInWhichToSearchList, database);
             if (finalDocuments.isEmpty()) {
                 finalDocuments = documents;
@@ -1091,7 +1098,7 @@ public class MainController {
             List<Document> docs = new ArrayList<>();
 //            FindIterable<Document> sortedDocs;
             boolean thereIsIndex = false;
-            for(Index index : crtTable.getIndexes()) {
+            for (Index index : crtTable.getIndexes()) {
                 if (index.getColumns().get(0).equalsIgnoreCase(columnName)) {
                     MongoCollection<Document> collection = database.getCollection(columnName + "_" + tableName + "_index");
 //                    sortedDocs = collection.find().sort(ascending(columnName));
@@ -1120,13 +1127,12 @@ public class MainController {
                                     endValue = "";
                                 }
 
-                                Pattern startPattern = Pattern.compile("^"+Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
-                                Pattern endPattern = Pattern.compile(Pattern.quote(endValue)+"$", Pattern.CASE_INSENSITIVE);
+                                Pattern startPattern = Pattern.compile("^" + Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
+                                Pattern endPattern = Pattern.compile(Pattern.quote(endValue) + "$", Pattern.CASE_INSENSITIVE);
 
                                 if (startValue.isEmpty() && !endValue.isEmpty()) {
                                     docs.addAll(collection.find(regex("_id", endPattern)).into(new ArrayList<>()));
-                                } else if (!startValue.isEmpty() && endValue.isEmpty())
-                                {
+                                } else if (!startValue.isEmpty() && endValue.isEmpty()) {
                                     docs.addAll(collection.find(regex("_id", startPattern)).into(new ArrayList<>()));
                                 }
 
@@ -1154,7 +1160,7 @@ public class MainController {
                 for (Document document : collection.find()) {
                     columnValueMap = getColumnValueMap(document, crtTable);
                     if (columnValueMap.get(columnName) != null) {
-                        switch (condition){
+                        switch (condition) {
                             case "=":
                                 if (columnValueMap.get(columnName).equalsIgnoreCase(value)) {
                                     resultDocuments.add(document);
@@ -1175,15 +1181,14 @@ public class MainController {
                                         endValue = "";
                                     }
 
-                                    Pattern startPattern = Pattern.compile("^"+Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
-                                    Pattern endPattern = Pattern.compile(Pattern.quote(endValue)+"$", Pattern.CASE_INSENSITIVE);
+                                    Pattern startPattern = Pattern.compile("^" + Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
+                                    Pattern endPattern = Pattern.compile(Pattern.quote(endValue) + "$", Pattern.CASE_INSENSITIVE);
 
                                     if (startValue.isEmpty() && !endValue.isEmpty()) {
                                         if (columnValueMap.get(columnName).matches(String.valueOf(endPattern))) {
                                             resultDocuments.add(document);
                                         }
-                                    } else if (!startValue.isEmpty() && endValue.isEmpty())
-                                    {
+                                    } else if (!startValue.isEmpty() && endValue.isEmpty()) {
                                         if (columnValueMap.get(columnName).matches(String.valueOf(startPattern))) {
                                             resultDocuments.add(document);
                                         }
@@ -1279,7 +1284,7 @@ public class MainController {
             }
         }
 
-        return  ColumnValueMap;
+        return ColumnValueMap;
     }
 
 
@@ -1301,13 +1306,13 @@ public class MainController {
 
                 Map<String, String> columnValueMap = getColumnValueMap(document, crtTable);
                 if (!column.getKey().trim().equals("*")) {
-                    for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
+                    for (Map.Entry<String, String> entry : columnValueMap.entrySet()) {
                         if (Objects.equals(entry.getKey(), column.getKey())) {
                             resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
                         }
                     }
                 } else {
-                    for (Map.Entry<String,String> entry : columnValueMap.entrySet()) {
+                    for (Map.Entry<String, String> entry : columnValueMap.entrySet()) {
                         resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
                     }
                 }
@@ -1322,7 +1327,7 @@ public class MainController {
         }
 
         resultTextArea.setText(result.toString()
-                .replace("[","")
+                .replace("[", "")
                 .replace("]", "")
                 .replace(", ", ""));
     }
@@ -1344,13 +1349,12 @@ public class MainController {
                 String values = document.get("values").toString();
                 String formattedResult = null;
 
-                if (values.contains("#")){
+                if (values.contains("#")) {
                     String[] valuesSplit = values.split("#");
 
                     formattedResult = "id:" + id + " name:" + valuesSplit[0] +
                             " tip:" + valuesSplit[1] + " price:" + valuesSplit[2] + "  ;  ";
-                }
-                else formattedResult = "id:" + id + " denumire:" + values;
+                } else formattedResult = "id:" + id + " denumire:" + values;
 
                 resultStringBuilder.append(formattedResult);
             }
@@ -1363,7 +1367,6 @@ public class MainController {
         String formattedResultString = resultStringBuilder.toString().trim();
         resultTextArea.setText(formattedResultString);
     }
-
 
 
 }
