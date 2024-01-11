@@ -882,7 +882,7 @@ public class MainController {
 
     private boolean ProcessSelectFromTable() {
 //        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
-        //group(5)                                                                        //group(9)
+                                                                      //group(5)                                                                        //group(9)
         String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|\\w+|\\*)(?:\\s*,\\s*(?:\\w+\\.\\w+|\\w+|\\*))*)(\\s+)(from)(\\s+)((?:\\w+\\s*(?:,\\s*\\w+\\s*)*))(?:\\s*(?:(inner|left|right)?\\s+(join)\\s+(\\w+)\\s+(on)\\s+(\\w+\\.\\w+=\\w+\\.\\w+)))?(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
 
 
@@ -994,16 +994,96 @@ public class MainController {
         List<Document> finalDocuments = new ArrayList<>();
 
         List<List<Document>> records = new ArrayList<>();
+        List<Document> docs1 = new ArrayList<>();
+        List<Document> docs2 = new ArrayList<>();
 
         // if oncond has index use index-nested-loop-join else hash-join
+        // process ONCOND
+        String[] parts = onCond.split("=");
+        List<Document> resultDocuments = new ArrayList<>();
+        int i = 1; //starting after the id column
 
-        for (String table : tablesInWhichToSearchList) {
-            MongoCollection<Document> collection = database.getCollection(table);
-            List<Document> records1 = collection.find().into(new ArrayList<>());
-            records.add(records1);
-        }
+        if (parts.length == 2) {
+            String columnNameAndTable0 = parts[0].trim();
+            String columnNameAndTable1 = parts[1].trim();
+            String columnName0 = null, columnName1 = null;
+            String tableName0 = null, tableName1 = null;
+
+            if (columnNameAndTable0.contains(".")) {
+                tableName0 = columnNameAndTable0.split("\\.")[0];
+                columnName0 = columnNameAndTable0.split("\\.")[1];
+            }
+            if (columnNameAndTable1.contains(".")) {
+                tableName1 = columnNameAndTable1.split("\\.")[0];
+                columnName1 = columnNameAndTable1.split("\\.")[1];
+            }
+
+            Table crtTable = crtDatabase.getTableByName(tableName0);
+//            boolean thereIsIndex = false;
+//            for (Index index : crtTable.getIndexes()) {
+//                if (index.getColumns().get(0).equalsIgnoreCase(columnName0)) {
+                    List<String> collectionNames = database.listCollectionNames().into(new ArrayList<>());
+                    // Filter collections based on a regex pattern
+                    String regexPattern = "^\\w*" + Pattern.quote(columnName0.toLowerCase(Locale.ROOT)) + "\\w*(_index)?";
+                    Pattern pattern = Pattern.compile(regexPattern);
+                    List<String> filteredCollections = collectionNames.stream()
+                            .filter(collectionName -> pattern.matcher(collectionName).matches())
+                            .collect(Collectors.toList());
+                    MongoCollection<Document> firstCol = database.getCollection(filteredCollections.get(0));
+
+                    // Fetch all documents from the Produse collection
+                    List<Document> firstDocuments = firstCol.find().into(new ArrayList<>());
+                    List<Column> allColumns = crtTable.getColumns();
+
+                    while (!allColumns.isEmpty()){
+                        if (allColumns.get(i).getColumnName().equals(columnName0)){
+                           break;
+                        }
+                        i++;
+                    }
+
+                    MongoCollection<Document> secondCol = database.getCollection(tableName1);
+                    // For each Produse document, retrieve the related document from Tipuri collection
+                    for (Document firstDoc : firstDocuments) {
+                        String value = null;
+                        Object tipValue = firstDoc.get("_id");
+                        if (tipValue.toString().contains("$")){
+                            String[] tipValues = tipValue.toString().split("\\$");
+                            value = tipValues[i-1];
+                        }
+
+                        if (value != null) {
+                            // Query the Tipuri collection to find the related document based on the custom ID field
+                            Document secondDoc = secondCol.find(Filters.eq("_id", value)).first();
+
+                            // Handle the retrieved Tipuri document according to your needs
+                            if (secondDoc != null) {
+                                // Handle the found Tipuri document
+//                                System.out.println("Found related document in Tipuri collection: " + secondDoc.toJson());
+                                docs1.add(firstDoc);
+
+                            }
+                        }
+                    }
+                docs2.addAll(secondCol.find().into(new ArrayList<>()));
+                }
+//            }
+//        }
+
+
+
+//        for (String table : tablesInWhichToSearchList) {
+//            MongoCollection<Document> collection = database.getCollection(table);
+//            List<Document> records1 = collection.find().into(new ArrayList<>());
+//            records.add(records1);
+//        }
+
+
+        records.add(docs1);
+        records.add(docs2);
+
         //hashJoin with 2 tables(TO DO for more than 2)
-        List<Document[]> finaly = hashJoin(records.get(0), records.get(1));
+        List<Document[]> finaly = hashJoin(records.get(0), records.get(1), i);
 //        System.out.println(finaly);
 
 
@@ -1015,18 +1095,32 @@ public class MainController {
         return finaly;
     }
 
-    private List<Document[]> hashJoin(List<Document> records1, List<Document> records2) {
+    private List<Document[]> hashJoin(List<Document> records1, List<Document> records2, int idx) {
         List<Document[]> result = new ArrayList<>();
         Map<String, List<Document>> map = new HashMap<>();
 
-        for (Document record : records1) {
+        for (Document record : records2) {
             List<Document> v = map.getOrDefault(record.getString("_id"), new ArrayList<>());
             v.add(record);
+//            String value = null;
+//            if (record.getString("_id").contains("$")){
+//                String[] recordValues = record.getString("_id").split("\\$");
+//                value = recordValues[idx-1];
+//            }
             map.put(record.getString("_id"), v);
         }
 
-        for (Document record : records2) {
-            List<Document> lst = map.get(record.getString("_id"));
+        Set<String> keys = map.keySet();
+        // Converting HashSet to Array
+//        String[] arrayKeys = keys.toArray(new String[keys.size()]);
+//        int i=0;
+        for (Document record : records1) {
+            String value = null;
+            if (record.getString("_id").contains("$")){
+                String[] recordValues = record.getString("_id").split("\\$");
+                value = recordValues[idx-1];
+            }
+            List<Document> lst = map.get(value);
             if (lst != null) {
                 lst.stream().forEach(r -> {
                     result.add(new Document[]{r, record});
@@ -1344,22 +1438,29 @@ public class MainController {
         }
 
         for (Document[] documents : resultDocuments) {
-            for (Document document : documents) {
+                Document document = documents[1];
                 String id = document.get("_id").toString();
                 String values = document.get("values").toString();
+                String formattedIDResult = null;
+                String formattedValueResult = null;
                 String formattedResult = null;
 
+                if (id.contains("$")){
+                    String[] idSplit = id.split("\\$");
+                    formattedIDResult = " name:" + idSplit[0] +
+                            " tip:" + idSplit[1];
+                } else formattedIDResult = "id:" + id;
                 if (values.contains("#")) {
                     String[] valuesSplit = values.split("#");
+                    formattedValueResult = " name:" + valuesSplit[0] +
+                            " tip:" + valuesSplit[1];
+                } else formattedValueResult = "id:" + values;
 
-                    formattedResult = "id:" + id + " name:" + valuesSplit[0] +
-                            " tip:" + valuesSplit[1] + " price:" + valuesSplit[2] + "  ;  ";
-                } else formattedResult = "id:" + id + " denumire:" + values;
-
+                formattedResult = formattedValueResult + formattedIDResult + "\n";
                 resultStringBuilder.append(formattedResult);
             }
             resultStringBuilder.append("\n");
-        }
+//        }
 
         resultStringBuilder.setLength(resultStringBuilder.length() - 2);
         result.add(resultStringBuilder.toString());

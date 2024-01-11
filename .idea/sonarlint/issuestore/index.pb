@@ -40,3 +40,5 @@ l
 .MainApp/Server/src/main/java/model/Column.java,8\e\8e735edc04f986ffc6ca3c95e960f566390c2964
 ]
 -MainApp/Server/src/main/java/model/Table.java,3\2\32eeae415dfe76d6a89eb83e290ac0fb3dc47839
+K
+MainApp/Client/build.gradle,8\4\84314ab4843a6876682f0d9219d08019349dc86b
