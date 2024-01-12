@@ -963,7 +963,7 @@ public class MainController {
             DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
         } else if (joinTable != null && onCond != null) {
             resultDocumentsJoin = executeJoinOperation(whereClause, tablesInWhichToSearchList, onCond, database);
-            DisplayJoinResults(resultDocumentsJoin, columnAndTableList);
+            DisplayJoinResults(resultDocumentsJoin, columnAndTableList, isDistinct);
         } else {
             for (String tableName : tablesInWhichToSearchList) {
                 MongoCollection<Document> collection = database.getCollection(tableName);
@@ -983,13 +983,13 @@ public class MainController {
 
     private List<Document[]> executeJoinOperation(String whereClause, List<String> tablesInWhichToSearchList, String onCond, MongoDatabase database) {
         List<List<Document>> records = new ArrayList<>();
+        List<Document> resultDocumentsList = null;
         List<Document> docs1 = new ArrayList<>();
         List<Document> docs2 = new ArrayList<>();
 
         // TODO - if oncond has index use index-nested-loop-join else hash-join
         // process ONCOND
         String[] parts = onCond.split("=");
-        List<Document> resultDocuments = new ArrayList<>();
         int i = 1; //starting after the id column
 
         if (parts.length == 2) {
@@ -1054,8 +1054,6 @@ public class MainController {
             docs2.addAll(secondCol.find().into(new ArrayList<>()));
         }
 
-        List<Document> resultDocumentsList = null;
-
         if (whereClause != null) {
             resultDocumentsList = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
             records.add(resultDocumentsList);
@@ -1064,20 +1062,21 @@ public class MainController {
         records.add(docs2);
 
         //hashJoin with 2 tables(TODO for more than 2)
-        List<Document[]> finaly = hashJoin(records.get(0), records.get(1), i);
-        return finaly;
+        return hashJoin(records.get(0), records.get(1), i);
     }
 
     private List<Document[]> hashJoin(List<Document> records1, List<Document> records2, int idx) {
         List<Document[]> result = new ArrayList<>();
         Map<String, List<Document>> map = new HashMap<>();
 
+        //smaller collection
         for (Document record : records2) {
             List<Document> v = map.getOrDefault(record.getString("_id"), new ArrayList<>());
             v.add(record);
             map.put(record.getString("_id"), v);
         }
 
+        //bigger collection
         for (Document record : records1) {
             String value = null;
             if (record.getString("_id").contains("$")) {
@@ -1447,7 +1446,7 @@ public class MainController {
                 .replace(", ", ""));
     }
 
-    private void DisplayJoinResults(List<Document[]> resultDocuments, List<Pair<String, String>> selectedColumns) {
+    private void DisplayJoinResults(List<Document[]> resultDocuments, List<Pair<String, String>> selectedColumns, boolean isDistinct) {
         StringBuilder resultStringBuilder;
         List<String> result = new ArrayList<>();
         boolean usesIndex;
@@ -1456,7 +1455,6 @@ public class MainController {
             resultTextArea.setText("No records found!");
             return;
         }
-
 
         for (Document[] documents : resultDocuments) {
             resultStringBuilder = new StringBuilder();
@@ -1497,6 +1495,11 @@ public class MainController {
             resultStringBuilder.append("\n");
             result.add(resultStringBuilder.toString());
         }
+
+        if (isDistinct) {
+            result = result.stream().distinct().toList();
+        }
+
         resultTextArea.setText(result.toString()
                 .replace("[", "")
                 .replace("]", "")
