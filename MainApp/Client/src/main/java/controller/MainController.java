@@ -3,14 +3,12 @@ package controller;
 
 import com.google.gson.Gson;
 import com.mongodb.MongoException;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.model.Updates;
-import com.mongodb.client.result.InsertOneResult;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,10 +21,8 @@ import model.*;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import javax.print.Doc;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.invoke.StringConcatException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -64,6 +60,7 @@ public class MainController {
     private DataBase crtDatabase;
     private Table controllerTable;
     private MongoClient mongoClient;
+//    private boolean usesIndex;
 
     public void setDatabases(Databases myDBMS) {
         this.myDBMS = myDBMS;
@@ -882,7 +879,7 @@ public class MainController {
 
     private boolean ProcessSelectFromTable() {
 //        String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|[\\w\\*]+(?:\\s*,\\s*\\w+\\.\\w+|\\s*,\\s*[\\w\\*]+)*))(\\s+)(from)(\\s+)(\\w+\\s*(?:,\\s*\\w+\\s*)*)(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
-                                                                      //group(5)                                                                        //group(9)
+        //group(5)                                                                        //group(9)
         String selectPattern = "^\\s*(select)(\\s+)(distinct)?(\\s+)?((?:\\w+\\.\\w+|\\w+|\\*)(?:\\s*,\\s*(?:\\w+\\.\\w+|\\w+|\\*))*)(\\s+)(from)(\\s+)((?:\\w+\\s*(?:,\\s*\\w+\\s*)*))(?:\\s*(?:(inner|left|right)?\\s+(join)\\s+(\\w+)\\s+(on)\\s+(\\w+\\.\\w+=\\w+\\.\\w+)))?(\\s*)(?:(where)(\\s+)((.|\\n)*))?;";
 
 
@@ -922,7 +919,7 @@ public class MainController {
         for (String column : columnsToShowAux) {
             if (column.contains(".")) {
                 List<String> columnAndTable = List.of(column.split("\\."));
-                columnAndTableList.add(new Pair<>(columnAndTable.get(0), columnAndTable.get(1)));
+                columnAndTableList.add(new Pair<>(columnAndTable.get(1), columnAndTable.get(0)));
             } else {
                 columnAndTableList.add(new Pair<>(column.trim(), tablesInWhichToSearchList.get(0)));
             }
@@ -965,9 +962,8 @@ public class MainController {
             resultDocumentsList = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
             DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
         } else if (joinTable != null && onCond != null) {
-            //NOT FINAL
-            resultDocumentsJoin = executeJoinOperation(joinTable, onCond, whereClause, tablesInWhichToSearchList, database);
-            DisplayJoinResults(resultDocumentsJoin);
+            resultDocumentsJoin = executeJoinOperation(whereClause, tablesInWhichToSearchList, onCond, database);
+            DisplayJoinResults(resultDocumentsJoin, columnAndTableList);
         } else {
             for (String tableName : tablesInWhichToSearchList) {
                 MongoCollection<Document> collection = database.getCollection(tableName);
@@ -981,23 +977,16 @@ public class MainController {
             }
             DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
         }
-
-//        // Display query results
-//        DisplayQueryResults(resultDocumentsList, columnAndTableList, isDistinct);
-
         return true;
     }
 
-    //NOT FINAL
-    private List<Document[]> executeJoinOperation(String joinTable, String onCond, String whereClause, List<String> tablesInWhichToSearchList, MongoDatabase database) {
-        List<Document> documents;
-        List<Document> finalDocuments = new ArrayList<>();
 
+    private List<Document[]> executeJoinOperation(String whereClause, List<String> tablesInWhichToSearchList, String onCond, MongoDatabase database) {
         List<List<Document>> records = new ArrayList<>();
         List<Document> docs1 = new ArrayList<>();
         List<Document> docs2 = new ArrayList<>();
 
-        // if oncond has index use index-nested-loop-join else hash-join
+        // TODO - if oncond has index use index-nested-loop-join else hash-join
         // process ONCOND
         String[] parts = onCond.split("=");
         List<Document> resultDocuments = new ArrayList<>();
@@ -1019,79 +1008,63 @@ public class MainController {
             }
 
             Table crtTable = crtDatabase.getTableByName(tableName0);
-//            boolean thereIsIndex = false;
-//            for (Index index : crtTable.getIndexes()) {
-//                if (index.getColumns().get(0).equalsIgnoreCase(columnName0)) {
-                    List<String> collectionNames = database.listCollectionNames().into(new ArrayList<>());
-                    // Filter collections based on a regex pattern
-                    String regexPattern = "^\\w*" + Pattern.quote(columnName0.toLowerCase(Locale.ROOT)) + "\\w*(_index)?";
-                    Pattern pattern = Pattern.compile(regexPattern);
-                    List<String> filteredCollections = collectionNames.stream()
-                            .filter(collectionName -> pattern.matcher(collectionName).matches())
-                            .collect(Collectors.toList());
-                    MongoCollection<Document> firstCol = database.getCollection(filteredCollections.get(0));
+            List<String> collectionNames = database.listCollectionNames().into(new ArrayList<>());
+            MongoCollection<Document> firstCol;
+            // Filter collections based on a regex pattern
+            String regexPattern = "^\\w*" + Pattern.quote(columnName0.toLowerCase(Locale.ROOT)) + "\\w*(_index)?";
+            Pattern pattern = Pattern.compile(regexPattern);
+            List<String> filteredCollections = collectionNames.stream()
+                    .filter(collectionName -> pattern.matcher(collectionName).matches())
+                    .toList();
+            if (filteredCollections.isEmpty()) {
+                firstCol = database.getCollection(tableName0);
+            } else {
+                firstCol = database.getCollection(filteredCollections.get(0));
+            }
 
-                    // Fetch all documents from the Produse collection
-                    List<Document> firstDocuments = firstCol.find().into(new ArrayList<>());
-                    List<Column> allColumns = crtTable.getColumns();
-
-                    while (!allColumns.isEmpty()){
-                        if (allColumns.get(i).getColumnName().equals(columnName0)){
-                           break;
-                        }
-                        i++;
-                    }
-
-                    MongoCollection<Document> secondCol = database.getCollection(tableName1);
-                    // For each Produse document, retrieve the related document from Tipuri collection
-                    for (Document firstDoc : firstDocuments) {
-                        String value = null;
-                        Object tipValue = firstDoc.get("_id");
-                        if (tipValue.toString().contains("$")){
-                            String[] tipValues = tipValue.toString().split("\\$");
-                            value = tipValues[i-1];
-                        }
-
-                        if (value != null) {
-                            // Query the Tipuri collection to find the related document based on the custom ID field
-                            Document secondDoc = secondCol.find(Filters.eq("_id", value)).first();
-
-                            // Handle the retrieved Tipuri document according to your needs
-                            if (secondDoc != null) {
-                                // Handle the found Tipuri document
-//                                System.out.println("Found related document in Tipuri collection: " + secondDoc.toJson());
-                                docs1.add(firstDoc);
-
-                            }
-                        }
-                    }
-                docs2.addAll(secondCol.find().into(new ArrayList<>()));
+            // Fetch all documents from the bigger collection
+            List<Document> firstDocuments = firstCol.find().into(new ArrayList<>());
+            List<Column> allColumns = crtTable.getColumns();
+            //find the index of the column from ONCOND
+            while (!allColumns.isEmpty()) {
+                if (allColumns.get(i).getColumnName().equals(columnName0)) {
+                    break;
                 }
-//            }
-//        }
+                i++;
+            }
 
+            MongoCollection<Document> secondCol = database.getCollection(tableName1);
+            // For each document from bigger table, retrieve the related document from the smaller collection
+            for (Document firstDoc : firstDocuments) {
+                String value = null;
+                Object tipValue = firstDoc.get("_id");
+                if (tipValue.toString().contains("$")) {
+                    String[] tipValues = tipValue.toString().split("\\$");
+                    value = tipValues[i - 1];
+                }
 
-
-//        for (String table : tablesInWhichToSearchList) {
-//            MongoCollection<Document> collection = database.getCollection(table);
-//            List<Document> records1 = collection.find().into(new ArrayList<>());
-//            records.add(records1);
-//        }
-
-
-        records.add(docs1);
-        records.add(docs2);
-
-        //hashJoin with 2 tables(TO DO for more than 2)
-        List<Document[]> finaly = hashJoin(records.get(0), records.get(1), i);
-//        System.out.println(finaly);
-
-
-        if (whereClause != null && !whereClause.trim().isEmpty()) {
-            finalDocuments = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
+                if (value != null) {
+                    // Query the smaller collection to find the related document based on the custom ID field
+                    Document secondDoc = secondCol.find(Filters.eq("_id", value)).first();
+                    if (secondDoc != null) {
+                        docs1.add(firstDoc);
+                    }
+                }
+            }
+            docs2.addAll(secondCol.find().into(new ArrayList<>()));
         }
 
-//        return finalDocuments;
+        List<Document> resultDocumentsList = null;
+
+        if (whereClause != null) {
+            resultDocumentsList = ExecuteMultipleWhereCondition(whereClause, tablesInWhichToSearchList, database);
+            records.add(resultDocumentsList);
+        } else
+            records.add(docs1);
+        records.add(docs2);
+
+        //hashJoin with 2 tables(TODO for more than 2)
+        List<Document[]> finaly = hashJoin(records.get(0), records.get(1), i);
         return finaly;
     }
 
@@ -1102,28 +1075,19 @@ public class MainController {
         for (Document record : records2) {
             List<Document> v = map.getOrDefault(record.getString("_id"), new ArrayList<>());
             v.add(record);
-//            String value = null;
-//            if (record.getString("_id").contains("$")){
-//                String[] recordValues = record.getString("_id").split("\\$");
-//                value = recordValues[idx-1];
-//            }
             map.put(record.getString("_id"), v);
         }
 
-        Set<String> keys = map.keySet();
-        // Converting HashSet to Array
-//        String[] arrayKeys = keys.toArray(new String[keys.size()]);
-//        int i=0;
         for (Document record : records1) {
             String value = null;
-            if (record.getString("_id").contains("$")){
+            if (record.getString("_id").contains("$")) {
                 String[] recordValues = record.getString("_id").split("\\$");
-                value = recordValues[idx-1];
+                value = recordValues[idx - 1];
             }
             List<Document> lst = map.get(value);
             if (lst != null) {
                 lst.stream().forEach(r -> {
-                    result.add(new Document[]{r, record});
+                    result.add(new Document[]{record, r});
                 });
             }
         }
@@ -1190,20 +1154,39 @@ public class MainController {
 
             Table crtTable = crtDatabase.getTableByName(tableName);
             List<Document> docs = new ArrayList<>();
-//            FindIterable<Document> sortedDocs;
-            boolean thereIsIndex = false;
+            int i = 1;
+            List<Column> allColumns = crtTable.getColumns();
+            //find the index of the column from where cond
+            while (!allColumns.isEmpty()) {
+                if (allColumns.get(i).getColumnName().equals(columnName)) {
+                    break;
+                }
+                i++;
+            }
+            boolean usesIndex = false;
             for (Index index : crtTable.getIndexes()) {
-                if (index.getColumns().get(0).equalsIgnoreCase(columnName)) {
-                    MongoCollection<Document> collection = database.getCollection(columnName + "_" + tableName + "_index");
-//                    sortedDocs = collection.find().sort(ascending(columnName));
+                List<String> indexColumns = index.getColumns();
+                if (indexColumns.size() == 1 && indexColumns.get(0).equalsIgnoreCase(columnName) ||
+                        indexColumns.size() > 1 && indexColumns.contains(columnName)) {
+                    List<String> collectionNames = database.listCollectionNames().into(new ArrayList<>());
+                    MongoCollection<Document> collection;
+                    // Filter collections based on a regex pattern
+                    String regexPattern = "^\\w*" + Pattern.quote(columnName.toLowerCase(Locale.ROOT)) + "\\w*(_index)?";
+                    Pattern pattern = Pattern.compile(regexPattern);
+                    List<String> filteredCollections = collectionNames.stream()
+                            .filter(collectionName -> pattern.matcher(collectionName).matches())
+                            .toList();
+                    collection = database.getCollection(filteredCollections.get(0));
+                    List<Document> getAll = collection.find().into(new ArrayList<>());
+
                     switch (condition) {
                         case "=":
-                            docs.addAll(collection.find(Filters.eq("_id", value)).into(new ArrayList<>()));
-//                            for (Document doc : sortedDocs) {
-//                                if (doc.get("_id").equals(value)) {
-//                                    docs.add(doc);
-//                                }
-//                            }
+                            for (Document document : getAll) {
+                                String[] id_value = document.get("_id").toString().split("\\$");
+                                if (id_value[i - 1].equals(value)) {
+                                    docs.add(document);
+                                }
+                            }
                             break;
                         case "like":
                             if (value.contains("%")) {
@@ -1221,38 +1204,64 @@ public class MainController {
                                     endValue = "";
                                 }
 
-                                Pattern startPattern = Pattern.compile("^" + Pattern.quote(startValue), Pattern.CASE_INSENSITIVE);
-                                Pattern endPattern = Pattern.compile(Pattern.quote(endValue) + "$", Pattern.CASE_INSENSITIVE);
-
                                 if (startValue.isEmpty() && !endValue.isEmpty()) {
-                                    docs.addAll(collection.find(regex("_id", endPattern)).into(new ArrayList<>()));
+                                    for (Document document : getAll) {
+                                        String[] id_value = document.get("_id").toString().split("\\$");
+                                        if (id_value[i - 1].endsWith(endValue)) {
+                                            docs.add(document);
+                                        }
+                                    }
                                 } else if (!startValue.isEmpty() && endValue.isEmpty()) {
-                                    docs.addAll(collection.find(regex("_id", startPattern)).into(new ArrayList<>()));
+                                    for (Document document : getAll) {
+                                        String[] id_value = document.get("_id").toString().split("\\$");
+                                        if (id_value[i - 1].startsWith(startValue)) {
+                                            docs.add(document);
+                                        }
+                                    }
                                 }
-
                             }
                             break;
                         case "<":
-                            docs.addAll(collection.find(Filters.lt("_id", value)).into(new ArrayList<>()));
+                            for (Document document : getAll) {
+                                String[] id_value = document.get("_id").toString().split("\\$");
+                                if (Integer.parseInt(id_value[i - 1]) < Integer.parseInt(value)) {
+                                    docs.add(document);
+                                }
+                            }
                             break;
                         case ">":
-                            docs.addAll(collection.find(Filters.gt("_id", value)).into(new ArrayList<>()));
+                            for (Document document : getAll) {
+                                String[] id_value = document.get("_id").toString().split("\\$");
+                                if (Integer.parseInt(id_value[i - 1]) > Integer.parseInt(value)) {
+                                    docs.add(document);
+                                }
+                            }
                             break;
                         case "<=":
-                            docs.addAll(collection.find(Filters.lte("_id", value)).into(new ArrayList<>()));
+                            for (Document document : getAll) {
+                                String[] id_value = document.get("_id").toString().split("\\$");
+                                if (Integer.parseInt(id_value[i - 1]) <= Integer.parseInt(value)) {
+                                    docs.add(document);
+                                }
+                            }
                             break;
                         case ">=":
-                            docs.addAll(collection.find(Filters.gte("_id", value)).into(new ArrayList<>()));
+                            for (Document document : getAll) {
+                                String[] id_value = document.get("_id").toString().split("\\$");
+                                if (Integer.parseInt(id_value[i - 1]) >= Integer.parseInt(value)) {
+                                    docs.add(document);
+                                }
+                            }
                             break;
                     }
-                    thereIsIndex = true;
+                    usesIndex = true;
                 }
             }
             Map<String, String> columnValueMap;
-            if (!thereIsIndex) {
+            if (!usesIndex) {
                 MongoCollection<Document> collection = database.getCollection(tableName);
                 for (Document document : collection.find()) {
-                    columnValueMap = getColumnValueMap(document, crtTable);
+                    columnValueMap = getColumnValueMap(document, crtTable, usesIndex);
                     if (columnValueMap.get(columnName) != null) {
                         switch (condition) {
                             case "=":
@@ -1352,29 +1361,36 @@ public class MainController {
                 }
             }
 
-            if (thereIsIndex) {
-                for (Document doc : docs) {
-                    MongoCollection<Document> collection = database.getCollection(tableName);
-                    resultDocuments.addAll(collection.find(eq("_id", doc.get("values"))).into(new ArrayList<>()));
-                }
+            if (usesIndex) {
+                resultDocuments.addAll(docs);
             }
         }
 
         return resultDocuments;
     }
 
-    private Map<String, String> getColumnValueMap(Document document, Table crtTable) {
+    private Map<String, String> getColumnValueMap(Document document, Table crtTable, boolean usesIndex) {
         Map<String, String> ColumnValueMap = new LinkedHashMap<>();
         int index = 0;
         for (PrimaryKey pk : crtTable.getPrimaryKeys()) {
-            ColumnValueMap.put(pk.getPkAttribute(), document.get("_id").toString().split("#")[index]);
-            index++;
+            if (usesIndex) {
+                ColumnValueMap.put(pk.getPkAttribute(), document.get("values").toString().split("#")[index]);
+                index++;
+            } else {
+                ColumnValueMap.put(pk.getPkAttribute(), document.get("_id").toString().split("#")[index]);
+                index++;
+            }
         }
         index = 0;
         for (Column col : crtTable.getColumns()) {
             if (ColumnValueMap.get(col.getColumnName()) == null) {
-                ColumnValueMap.put(col.getColumnName(), document.get("values").toString().split("#")[index]);
-                index++;
+                if (usesIndex) {
+                    ColumnValueMap.put(col.getColumnName(), document.get("_id").toString().split("\\$")[index]);
+                    index++;
+                } else {
+                    ColumnValueMap.put(col.getColumnName(), document.get("values").toString().split("#")[index]);
+                    index++;
+                }
             }
         }
 
@@ -1384,8 +1400,9 @@ public class MainController {
 
     private void DisplayQueryResults(List<Document> resultDocuments, List<Pair<String, String>> selectedColumns, boolean isDistinct) {
         // Implement logic to display query results
-        StringBuilder resultStringBuilder = new StringBuilder();
+        StringBuilder resultStringBuilder;
         List<String> result = new ArrayList<>();
+        boolean usesIndex;
 
         if (resultDocuments == null || resultDocuments.isEmpty()) {
             resultTextArea.setText("No records found!");
@@ -1397,8 +1414,12 @@ public class MainController {
             resultStringBuilder = new StringBuilder();
             for (Pair<String, String> column : selectedColumns) {
                 Table crtTable = crtDatabase.getTableByName(column.getValue());
+                if (crtTable.getIndexes().isEmpty()) {
+                    usesIndex = false;
+                } else usesIndex = true;
 
-                Map<String, String> columnValueMap = getColumnValueMap(document, crtTable);
+
+                Map<String, String> columnValueMap = getColumnValueMap(document, crtTable, usesIndex);
                 if (!column.getKey().trim().equals("*")) {
                     for (Map.Entry<String, String> entry : columnValueMap.entrySet()) {
                         if (Objects.equals(entry.getKey(), column.getKey())) {
@@ -1426,48 +1447,60 @@ public class MainController {
                 .replace(", ", ""));
     }
 
-    //NOT FINAL
-    private void DisplayJoinResults(List<Document[]> resultDocuments) {
-        // Implement logic to display query results
-        StringBuilder resultStringBuilder = new StringBuilder();
+    private void DisplayJoinResults(List<Document[]> resultDocuments, List<Pair<String, String>> selectedColumns) {
+        StringBuilder resultStringBuilder;
         List<String> result = new ArrayList<>();
+        boolean usesIndex;
 
         if (resultDocuments == null || resultDocuments.isEmpty()) {
             resultTextArea.setText("No records found!");
             return;
         }
 
+
         for (Document[] documents : resultDocuments) {
-                Document document = documents[1];
-                String id = document.get("_id").toString();
-                String values = document.get("values").toString();
-                String formattedIDResult = null;
-                String formattedValueResult = null;
-                String formattedResult = null;
+            resultStringBuilder = new StringBuilder();
+            String changedTable = "";  // Track the last joined table
+            for (Pair<String, String> column : selectedColumns) {
+                Table crtTable = crtDatabase.getTableByName(column.getValue());
+                Map<String, String> columnValueMap = null;
+                if (crtTable.getIndexes().isEmpty()) {
+                    usesIndex = false;
+                } else usesIndex = true;
 
-                if (id.contains("$")){
-                    String[] idSplit = id.split("\\$");
-                    formattedIDResult = " name:" + idSplit[0] +
-                            " tip:" + idSplit[1];
-                } else formattedIDResult = "id:" + id;
-                if (values.contains("#")) {
-                    String[] valuesSplit = values.split("#");
-                    formattedValueResult = " name:" + valuesSplit[0] +
-                            " tip:" + valuesSplit[1];
-                } else formattedValueResult = "id:" + values;
-
-                formattedResult = formattedValueResult + formattedIDResult + "\n";
-                resultStringBuilder.append(formattedResult);
+                //documents[0] - bigger table  ;   documents[1] - smaller table
+                if (!column.getKey().trim().equals("*")) {
+                    Document document;
+                    // Use documents[1] when dealing with a new table
+                    if (changedTable.isEmpty() || crtTable.getTableName().equals(changedTable)) {
+                        document = documents[0];
+                    } else {
+                        document = documents[1];
+                    }
+                    columnValueMap = getColumnValueMap(document, crtTable, usesIndex);
+                    for (Map.Entry<String, String> entry : columnValueMap.entrySet()) {
+                        if (Objects.equals(entry.getKey(), column.getKey())) {
+                            resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
+                        }
+                    }
+                } else {
+                    Document document = documents[0];
+                    columnValueMap = getColumnValueMap(document, crtTable, usesIndex);
+                    for (Map.Entry<String, String> entry : columnValueMap.entrySet()) {
+                        resultStringBuilder.append(entry.getKey()).append(": ").append(entry.getValue()).append("; ");
+                    }
+                }
+                // Update the last joined table
+                changedTable = crtTable.getTableName();
             }
+            resultStringBuilder.setLength(resultStringBuilder.length() - 2); // Remove trailing comma and space
             resultStringBuilder.append("\n");
-//        }
-
-        resultStringBuilder.setLength(resultStringBuilder.length() - 2);
-        result.add(resultStringBuilder.toString());
-
-        String formattedResultString = resultStringBuilder.toString().trim();
-        resultTextArea.setText(formattedResultString);
+            result.add(resultStringBuilder.toString());
+        }
+        resultTextArea.setText(result.toString()
+                .replace("[", "")
+                .replace("]", "")
+                .replace(", ", ""));
     }
-
 
 }
