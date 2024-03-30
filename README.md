@@ -3,7 +3,7 @@
 
 > **Master Project - in collaboration with [Buboi Oana](https://github.com/OanaBuboi)**
 >
-> A mini relational DBMS system developed as part of the DBMS Implementation course.
+> A mini relational DBMS system developed as part of the DBMS Implementation course
 > 
 > **Work in progress**
 
